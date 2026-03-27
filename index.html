@@ -414,6 +414,15 @@
       <input type="number" id="bleedMm" value="3" min="0" max="10" step="0.5">
     </div>
     <div class="field">
+      <label>Fit Image To</label>
+      <div class="orientation-toggle">
+        <input type="radio" name="fitMode" id="fitHeight" value="height" checked>
+        <label for="fitHeight">↕ Height</label>
+        <input type="radio" name="fitMode" id="fitWidth" value="width">
+        <label for="fitWidth">↔ Width</label>
+      </div>
+    </div>
+    <div class="field">
       <label>Resolution (DPI)</label>
       <select id="dpi">
         <option value="300" selected>300 dpi</option>
@@ -456,6 +465,7 @@
     <div class="spec"><div class="spec-key">With Bleed</div><div class="spec-val" id="specBleed">—</div></div>
     <div class="spec"><div class="spec-key">Resolution</div><div class="spec-val" id="specDpi">—</div></div>
     <div class="spec"><div class="spec-key">Orientation</div><div class="spec-val" id="specOrient">—</div></div>
+    <div class="spec"><div class="spec-key">Image Fit</div><div class="spec-val" id="specFit">—</div></div>
     <div class="spec"><div class="spec-key">Color Mode</div><div class="spec-val">RGB</div></div>
   </div>
 </div>
@@ -508,6 +518,9 @@ fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFile(fi
 document.querySelectorAll('input[name="orientation"]').forEach(el => {
   el.addEventListener('change', () => { if (loadedImage) { renderPreview(); updateSpecs(); } });
 });
+document.querySelectorAll('input[name="fitMode"]').forEach(el => {
+  el.addEventListener('change', () => { if (loadedImage) { renderPreview(); updateSpecs(); } });
+});
 
 function loadFile(file) {
   if (!file.type.startsWith('image/')) { setStatus('Please upload an image file.', 'err'); return; }
@@ -545,11 +558,13 @@ function getTrimDimensions() {
 
 function getSettings() {
   const [trimW, trimH] = getTrimDimensions();
-  const bleedMm  = parseFloat(document.getElementById('bleedMm').value) || 3;
+  const bleedVal = document.getElementById('bleedMm').value;
+  const bleedMm  = bleedVal === '' ? 3 : Math.max(0, parseFloat(bleedVal));
   const dpi      = parseInt(document.getElementById('dpi').value);
   const markLenMm = parseFloat(document.getElementById('markLen').value) || 5;
   const showCropMarks = document.getElementById('showCropMarks').checked;
   const showBleedBox  = document.getElementById('showBleedBox').checked;
+  const fitMode  = document.querySelector('input[name="fitMode"]:checked').value; // 'height' | 'width'
 
   const MM       = dpi / 25.4;
   const trimWpx  = Math.round(trimW * MM);
@@ -560,7 +575,7 @@ function getSettings() {
   const totalW   = trimWpx + 2 * bleedPx;
   const totalH   = trimHpx + 2 * bleedPx;
 
-  return { trimW, trimH, bleedMm, dpi, markLenMm, showCropMarks, showBleedBox,
+  return { trimW, trimH, bleedMm, dpi, markLenMm, showCropMarks, showBleedBox, fitMode,
            MM, trimWpx, trimHpx, bleedPx, markLenPx, markOffPx, totalW, totalH };
 }
 
@@ -572,12 +587,24 @@ function renderToCanvas(canvas, s) {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, s.totalW, s.totalH);
 
-  // Scale image to fill full height, center horizontally
-  const img    = loadedImage;
-  const scale  = s.totalH / img.height;
-  const scaledW = img.width * scale;
-  const xOff   = (s.totalW - scaledW) / 2;
-  ctx.drawImage(img, xOff, 0, scaledW, s.totalH);
+  // Scale image to fit — height or width, centered on the other axis
+  const img = loadedImage;
+  let scaledW, scaledH, xOff, yOff;
+  if (s.fitMode === 'width') {
+    const scale = s.totalW / img.width;
+    scaledW = s.totalW;
+    scaledH = img.height * scale;
+    xOff = 0;
+    yOff = (s.totalH - scaledH) / 2;
+  } else {
+    // height (default)
+    const scale = s.totalH / img.height;
+    scaledW = img.width * scale;
+    scaledH = s.totalH;
+    xOff = (s.totalW - scaledW) / 2;
+    yOff = 0;
+  }
+  ctx.drawImage(img, xOff, yOff, scaledW, scaledH);
 
   // Bleed box guide
   if (s.showBleedBox) {
@@ -638,6 +665,7 @@ function updateSpecs() {
   document.getElementById('specBleed').textContent = `${+(s.trimW + 2*s.bleedMm).toFixed(1)} × ${+(s.trimH + 2*s.bleedMm).toFixed(1)} mm`;
   document.getElementById('specDpi').textContent   = `${s.dpi} dpi`;
   document.getElementById('specOrient').textContent = orient.charAt(0).toUpperCase() + orient.slice(1);
+  document.getElementById('specFit').textContent = s.fitMode === 'width' ? 'Fit width' : 'Fit height';
 }
 
 generateBtn.addEventListener('click', async () => {
