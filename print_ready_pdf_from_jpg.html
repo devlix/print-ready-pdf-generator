@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Print PDF Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0f0f0f;
+    --paper: #f5f2ed;
+    --accent: #c8440a;
+    --muted: #8a8278;
+    --border: #d4cfc8;
+    --success: #2a6e3f;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .wrapper {
+    width: 100%;
+    max-width: 680px;
+  }
+
+  header {
+    margin-bottom: 3rem;
+  }
+
+  .label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 300;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  h1 span {
+    color: var(--muted);
+  }
+
+  .subtitle {
+    margin-top: 0.75rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  /* Drop zone */
+  .dropzone {
+    border: 1.5px dashed var(--border);
+    border-radius: 2px;
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    background: white;
+    margin-bottom: 2rem;
+  }
+
+  .dropzone:hover, .dropzone.dragover {
+    border-color: var(--accent);
+    background: #fdf9f6;
+  }
+
+  .dropzone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .drop-icon {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 1rem;
+    opacity: 0.3;
+  }
+
+  .drop-text {
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  .drop-text strong {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  /* Settings */
+  .settings {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .field label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .field select, .field input[type="number"] {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 2px;
+    padding: 0.6rem 0.75rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+    appearance: none;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  .field select:focus, .field input[type="number"]:focus {
+    border-color: var(--accent);
+  }
+
+  .field select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a8278'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    padding-right: 2rem;
+  }
+
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    cursor: pointer;
+    padding: 0.6rem 0;
+  }
+
+  .checkbox-row input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .checkbox-row span {
+    font-size: 0.9rem;
+    color: var(--ink);
+  }
+
+  /* Preview */
+  .preview-area {
+    display: none;
+    margin-bottom: 2rem;
+  }
+
+  .preview-area.visible { display: block; }
+
+  .preview-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+  }
+
+  .preview-canvas-wrap {
+    background: #888;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: center;
+    border-radius: 2px;
+  }
+
+  #previewCanvas {
+    max-width: 100%;
+    max-height: 320px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  }
+
+  /* Button */
+  .btn {
+    width: 100%;
+    padding: 1rem;
+    background: var(--ink);
+    color: white;
+    border: none;
+    border-radius: 2px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .btn:hover:not(:disabled) {
+    background: var(--accent);
+  }
+
+  .btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .btn.generating {
+    background: var(--accent);
+  }
+
+  /* Status */
+  .status {
+    margin-top: 1rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+    min-height: 1.2em;
+    transition: color 0.2s;
+  }
+
+  .status.ok { color: var(--success); }
+  .status.err { color: #c0392b; }
+
+  /* Specs bar */
+  .specs {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .spec {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .spec-key {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .spec-val {
+    font-size: 0.85rem;
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  /* Custom format row */
+  .custom-format {
+    display: none;
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    padding: 1rem;
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 2px;
+  }
+  .custom-format.visible { display: grid; }
+
+  /* Orientation toggle */
+  .orientation-toggle {
+    display: flex;
+    gap: 0;
+    border: 1.5px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    background: white;
+  }
+
+  .orientation-toggle input[type="radio"] { display: none; }
+
+  .orientation-toggle label {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.6rem 0.5rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    border-right: 1.5px solid var(--border);
+  }
+
+  .orientation-toggle label:last-of-type { border-right: none; }
+
+  .orientation-toggle input[type="radio"]:checked + label {
+    background: var(--ink);
+    color: white;
+  }
+
+  .orient-icon {
+    width: 14px; height: 14px;
+    border: 1.5px solid currentColor;
+    border-radius: 1px;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .orient-icon.land { width: 18px; height: 13px; }
+
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <header>
+    <div class="label">Print Automation</div>
+    <h1>Image → <span>Print-Ready PDF</span></h1>
+    <p class="subtitle">Generates A5 PDF with bleed and crop marks, ready for the press.</p>
+  </header>
+
+  <div class="dropzone" id="dropzone">
+    <input type="file" id="fileInput" accept="image/*">
+    <svg class="drop-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="4" y="8" width="32" height="26" rx="1" stroke="#0f0f0f" stroke-width="1.5"/>
+      <path d="M4 28l9-9 7 7 5-5 11 9" stroke="#0f0f0f" stroke-width="1.5" stroke-linejoin="round"/>
+      <circle cx="13" cy="17" r="3" stroke="#0f0f0f" stroke-width="1.5"/>
+    </svg>
+    <p class="drop-text"><strong>Drop image here</strong> or click to browse</p>
+    <p class="drop-text" style="font-size:0.78rem;margin-top:0.3rem;">JPG, PNG, TIFF, WebP</p>
+  </div>
+
+  <div class="settings">
+    <div class="field">
+      <label>Page Format</label>
+      <select id="pageFormat">
+        <option value="A5" selected>A5 — 148 × 210 mm</option>
+        <option value="A4">A4 — 210 × 297 mm</option>
+        <option value="A3">A3 — 297 × 420 mm</option>
+        <option value="A6">A6 — 105 × 148 mm</option>
+        <option value="Letter">Letter — 216 × 279 mm</option>
+        <option value="custom">Custom…</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Orientation</label>
+      <div class="orientation-toggle">
+        <input type="radio" name="orientation" id="orientPortrait" value="portrait" checked>
+        <label for="orientPortrait"><span class="orient-icon"></span>Portrait</label>
+        <input type="radio" name="orientation" id="orientLandscape" value="landscape">
+        <label for="orientLandscape"><span class="orient-icon land"></span>Landscape</label>
+      </div>
+    </div>
+
+    <!-- Custom format (shown when "custom" selected) -->
+    <div class="custom-format" id="customFormat">
+      <div class="field">
+        <label>Width (mm)</label>
+        <input type="number" id="customW" value="148" min="10" max="1200" step="0.5">
+      </div>
+      <div class="field">
+        <label>Height (mm)</label>
+        <input type="number" id="customH" value="210" min="10" max="1200" step="0.5">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Bleed (mm)</label>
+      <input type="number" id="bleedMm" value="3" min="0" max="10" step="0.5">
+    </div>
+    <div class="field">
+      <label>Resolution (DPI)</label>
+      <select id="dpi">
+        <option value="300" selected>300 dpi</option>
+        <option value="350">350 dpi</option>
+        <option value="400">400 dpi</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Crop Mark Length (mm)</label>
+      <input type="number" id="markLen" value="5" min="2" max="15" step="0.5">
+    </div>
+    <div class="field">
+      <label class="checkbox-row">
+        <input type="checkbox" id="showCropMarks" checked>
+        <span>Crop marks</span>
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="showBleedBox" checked>
+        <span>Bleed box guide</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="preview-area" id="previewArea">
+    <div class="preview-label">Preview (with bleed + marks)</div>
+    <div class="preview-canvas-wrap">
+      <canvas id="previewCanvas"></canvas>
+    </div>
+  </div>
+
+  <button class="btn" id="generateBtn" disabled>
+    <div class="spinner" id="spinner"></div>
+    <span id="btnText">Generate Print PDF</span>
+  </button>
+
+  <div class="status" id="status">Upload an image to begin</div>
+
+  <div class="specs" id="specs" style="display:none">
+    <div class="spec"><div class="spec-key">Trim Size</div><div class="spec-val" id="specTrim">—</div></div>
+    <div class="spec"><div class="spec-key">With Bleed</div><div class="spec-val" id="specBleed">—</div></div>
+    <div class="spec"><div class="spec-key">Resolution</div><div class="spec-val" id="specDpi">—</div></div>
+    <div class="spec"><div class="spec-key">Orientation</div><div class="spec-val" id="specOrient">—</div></div>
+    <div class="spec"><div class="spec-key">Color Mode</div><div class="spec-val">RGB</div></div>
+  </div>
+</div>
+
+<script>
+const PAGE_SIZES = {
+  A3:     [297, 420],
+  A4:     [210, 297],
+  A5:     [148, 210],
+  A6:     [105, 148],
+  Letter: [216, 279],
+};
+
+let loadedImage = null;
+
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const generateBtn = document.getElementById('generateBtn');
+const previewArea = document.getElementById('previewArea');
+const previewCanvas = document.getElementById('previewCanvas');
+const status = document.getElementById('status');
+const spinner = document.getElementById('spinner');
+const btnText = document.getElementById('btnText');
+const specs = document.getElementById('specs');
+const customFormatEl = document.getElementById('customFormat');
+const pageFormatEl = document.getElementById('pageFormat');
+
+// Show/hide custom format fields
+pageFormatEl.addEventListener('change', () => {
+  const isCustom = pageFormatEl.value === 'custom';
+  customFormatEl.classList.toggle('visible', isCustom);
+  if (loadedImage) { renderPreview(); updateSpecs(); }
+});
+
+// Drag and drop
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) loadFile(file);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
+
+// Settings change → re-render preview
+['pageFormat','bleedMm','dpi','markLen','showCropMarks','showBleedBox','customW','customH'].forEach(id => {
+  document.getElementById(id).addEventListener('change', () => { if (loadedImage) { renderPreview(); updateSpecs(); } });
+});
+document.querySelectorAll('input[name="orientation"]').forEach(el => {
+  el.addEventListener('change', () => { if (loadedImage) { renderPreview(); updateSpecs(); } });
+});
+
+function loadFile(file) {
+  if (!file.type.startsWith('image/')) { setStatus('Please upload an image file.', 'err'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      loadedImage = img;
+      generateBtn.disabled = false;
+      setStatus('Image loaded — preview ready', '');
+      renderPreview();
+      updateSpecs();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function getTrimDimensions() {
+  const format = pageFormatEl.value;
+  let w, h;
+  if (format === 'custom') {
+    w = parseFloat(document.getElementById('customW').value) || 148;
+    h = parseFloat(document.getElementById('customH').value) || 210;
+  } else {
+    [w, h] = PAGE_SIZES[format];
+  }
+  // Apply orientation
+  const landscape = document.querySelector('input[name="orientation"]:checked').value === 'landscape';
+  // portrait: short side = w, long side = h
+  const shortSide = Math.min(w, h);
+  const longSide  = Math.max(w, h);
+  return landscape ? [longSide, shortSide] : [shortSide, longSide];
+}
+
+function getSettings() {
+  const [trimW, trimH] = getTrimDimensions();
+  const bleedMm  = parseFloat(document.getElementById('bleedMm').value) || 3;
+  const dpi      = parseInt(document.getElementById('dpi').value);
+  const markLenMm = parseFloat(document.getElementById('markLen').value) || 5;
+  const showCropMarks = document.getElementById('showCropMarks').checked;
+  const showBleedBox  = document.getElementById('showBleedBox').checked;
+
+  const MM       = dpi / 25.4;
+  const trimWpx  = Math.round(trimW * MM);
+  const trimHpx  = Math.round(trimH * MM);
+  const bleedPx  = Math.round(bleedMm * MM);
+  const markLenPx = Math.round(markLenMm * MM);
+  const markOffPx = Math.round(2 * MM);
+  const totalW   = trimWpx + 2 * bleedPx;
+  const totalH   = trimHpx + 2 * bleedPx;
+
+  return { trimW, trimH, bleedMm, dpi, markLenMm, showCropMarks, showBleedBox,
+           MM, trimWpx, trimHpx, bleedPx, markLenPx, markOffPx, totalW, totalH };
+}
+
+function renderToCanvas(canvas, s) {
+  canvas.width  = s.totalW;
+  canvas.height = s.totalH;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, s.totalW, s.totalH);
+
+  // Scale image to fill full height, center horizontally
+  const img    = loadedImage;
+  const scale  = s.totalH / img.height;
+  const scaledW = img.width * scale;
+  const xOff   = (s.totalW - scaledW) / 2;
+  ctx.drawImage(img, xOff, 0, scaledW, s.totalH);
+
+  // Bleed box guide
+  if (s.showBleedBox) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(200,68,10,0.5)';
+    ctx.lineWidth   = Math.max(1, Math.round(0.25 * s.MM));
+    ctx.setLineDash([Math.round(3 * s.MM), Math.round(2 * s.MM)]);
+    ctx.strokeRect(s.bleedPx, s.bleedPx, s.trimWpx, s.trimHpx);
+    ctx.restore();
+  }
+
+  // Crop marks
+  if (s.showCropMarks) {
+    ctx.save();
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth   = Math.max(1, Math.round(0.25 * s.MM));
+    ctx.setLineDash([]);
+
+    const { bleedPx: b, trimWpx: tw, trimHpx: th, markOffPx: off, markLenPx: len } = s;
+    const corners = [
+      { x: b,      y: b      },
+      { x: b + tw, y: b      },
+      { x: b,      y: b + th },
+      { x: b + tw, y: b + th },
+    ];
+
+    corners.forEach(({ x, y }) => {
+      const dx = x === b ? -1 : 1;
+      const dy = y === b ? -1 : 1;
+      ctx.beginPath(); ctx.moveTo(x + dx * off, y);         ctx.lineTo(x + dx * (off + len), y);         ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, y + dy * off);         ctx.lineTo(x, y + dy * (off + len));         ctx.stroke();
+    });
+    ctx.restore();
+  }
+}
+
+function renderPreview() {
+  const s = getSettings();
+  previewArea.classList.add('visible');
+
+  const maxPreviewH = 600;
+  const previewScale = maxPreviewH / s.totalH;
+
+  const tempCanvas = document.createElement('canvas');
+  renderToCanvas(tempCanvas, s);
+
+  previewCanvas.width  = Math.round(s.totalW * previewScale);
+  previewCanvas.height = Math.round(s.totalH * previewScale);
+  const ctx = previewCanvas.getContext('2d');
+  ctx.drawImage(tempCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
+}
+
+function updateSpecs() {
+  const s = getSettings();
+  specs.style.display = 'flex';
+  const orient = document.querySelector('input[name="orientation"]:checked').value;
+  document.getElementById('specTrim').textContent  = `${s.trimW} × ${s.trimH} mm`;
+  document.getElementById('specBleed').textContent = `${+(s.trimW + 2*s.bleedMm).toFixed(1)} × ${+(s.trimH + 2*s.bleedMm).toFixed(1)} mm`;
+  document.getElementById('specDpi').textContent   = `${s.dpi} dpi`;
+  document.getElementById('specOrient').textContent = orient.charAt(0).toUpperCase() + orient.slice(1);
+}
+
+generateBtn.addEventListener('click', async () => {
+  if (!loadedImage) return;
+  setStatus('Generating PDF…', '');
+  generateBtn.disabled = true;
+  spinner.style.display = 'block';
+  btnText.textContent = 'Generating…';
+  generateBtn.classList.add('generating');
+
+  await new Promise(r => setTimeout(r, 30));
+
+  try {
+    const s = getSettings();
+    const fullCanvas = document.createElement('canvas');
+    renderToCanvas(fullCanvas, s);
+
+    const imgData = fullCanvas.toDataURL('image/jpeg', 0.97);
+    const pdfW = +(s.trimW + 2 * s.bleedMm).toFixed(2);
+    const pdfH = +(s.trimH + 2 * s.bleedMm).toFixed(2);
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({
+      orientation: pdfH >= pdfW ? 'portrait' : 'landscape',
+      unit: 'mm',
+      format: [pdfW, pdfH],
+      compress: true,
+    });
+
+    const format = pageFormatEl.value === 'custom' ? 'custom' : pageFormatEl.value;
+    pdf.setProperties({ title: 'Print-Ready PDF', subject: `${format} + ${s.bleedMm}mm bleed` });
+    pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH, '', 'FAST');
+    pdf.save(`print_${format}_bleed${s.bleedMm}mm.pdf`);
+
+    setStatus(`✓ PDF saved — ${pdfW}×${pdfH}mm @ ${s.dpi}dpi`, 'ok');
+  } catch (err) {
+    setStatus('Error: ' + err.message, 'err');
+    console.error(err);
+  }
+
+  generateBtn.disabled = false;
+  spinner.style.display = 'none';
+  btnText.textContent = 'Generate Print PDF';
+  generateBtn.classList.remove('generating');
+  if (loadedImage) generateBtn.disabled = false;
+  updateSpecs();
+});
+
+function setStatus(msg, type) {
+  status.textContent = msg;
+  status.className = 'status' + (type ? ' ' + type : '');
+}
+</script>
+
+</body>
+</html>
