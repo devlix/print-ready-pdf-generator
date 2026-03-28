@@ -418,12 +418,14 @@
       </select>
     </div>
     <div class="field">
-      <label>Fit Image To</label>
+      <label>Bleed Method</label>
       <div class="orientation-toggle">
         <input type="radio" name="fitMode" id="fitHeight" value="height" checked>
         <label for="fitHeight">↕ Height</label>
         <input type="radio" name="fitMode" id="fitWidth" value="width">
         <label for="fitWidth">↔ Width</label>
+        <input type="radio" name="fitMode" id="fitAddBleed" value="addbleed">
+		<label for="fitAddBleed">⤢ Add bleed</label>
       </div>
     </div>
     <div class="field">
@@ -582,6 +584,34 @@ function getSettings() {
            MM, trimWpx, trimHpx, bleedPx, markLenPx, markOffPx, totalW, totalH };
 }
 
+function sampleBackgroundColor(img) {
+  // Draw image to a small offscreen canvas and sample the four corners
+  const size = 10;
+  const tmp = document.createElement('canvas');
+  tmp.width = img.width; tmp.height = img.height;
+  const ctx = tmp.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+
+  const regions = [
+    ctx.getImageData(0, 0, size, size),                          // top-left
+    ctx.getImageData(img.width - size, 0, size, size),           // top-right
+    ctx.getImageData(0, img.height - size, size, size),          // bottom-left
+    ctx.getImageData(img.width - size, img.height - size, size, size), // bottom-right
+  ];
+
+  let r = 0, g = 0, b = 0, count = 0;
+  regions.forEach(d => {
+    for (let i = 0; i < d.data.length; i += 4) {
+      r += d.data[i]; g += d.data[i+1]; b += d.data[i+2];
+      count++;
+    }
+  });
+  r = Math.round(r / count);
+  g = Math.round(g / count);
+  b = Math.round(b / count);
+  return `rgb(${r},${g},${b})`;
+}
+
 function renderToCanvas(canvas, s) {
   canvas.width  = s.totalW;
   canvas.height = s.totalH;
@@ -593,19 +623,39 @@ function renderToCanvas(canvas, s) {
   // Scale image to fit — height or width, centered on the other axis
   const img = loadedImage;
   let scaledW, scaledH, xOff, yOff;
-  if (s.fitMode === 'width') {
-    const scale = s.totalW / img.width;
-    scaledW = s.totalW;
-    scaledH = img.height * scale;
-    xOff = 0;
-    yOff = (s.totalH - scaledH) / 2;
-  } else {
-    // height (default)
-    const scale = s.totalH / img.height;
+  if (s.fitMode === 'addbleed') {
+    // Image fills trim area exactly, bleed zone padded with sampled background color
+    bgColor = sampleBackgroundColor(img);
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, s.totalW, s.totalH);
+
+    // Scale image to fit within trim area (preserving aspect ratio, fit inside)
+    const scaleW = s.trimWpx / img.width;
+    const scaleH = s.trimHpx / img.height;
+    const scale  = Math.min(scaleW, scaleH);
     scaledW = img.width * scale;
-    scaledH = s.totalH;
-    xOff = (s.totalW - scaledW) / 2;
-    yOff = 0;
+    scaledH = img.height * scale;
+    // Center within trim area, offset by bleed
+    xOff = s.bleedPx + (s.trimWpx - scaledW) / 2;
+    yOff = s.bleedPx + (s.trimHpx - scaledH) / 2;
+  } else {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, s.totalW, s.totalH);
+
+    if (s.fitMode === 'width') {
+      const scale = s.totalW / img.width;
+      scaledW = s.totalW;
+      scaledH = img.height * scale;
+      xOff = 0;
+      yOff = (s.totalH - scaledH) / 2;
+    } else {
+      // height (default)
+      const scale = s.totalH / img.height;
+      scaledW = img.width * scale;
+      scaledH = s.totalH;
+      xOff = (s.totalW - scaledW) / 2;
+      yOff = 0;
+    }
   }
   ctx.drawImage(img, xOff, yOff, scaledW, scaledH);
 
@@ -668,7 +718,8 @@ function updateSpecs() {
   document.getElementById('specBleed').textContent = `${+(s.trimW + 2*s.bleedMm).toFixed(1)} × ${+(s.trimH + 2*s.bleedMm).toFixed(1)} mm`;
   document.getElementById('specDpi').textContent   = `${s.dpi} dpi`;
   document.getElementById('specOrient').textContent = orient.charAt(0).toUpperCase() + orient.slice(1);
-  document.getElementById('specFit').textContent = s.fitMode === 'width' ? 'Fit width' : 'Fit height';
+  const fitLabels = { height: 'Fit height', width: 'Fit width', addbleed: 'Add bleed' };
+  document.getElementById('specFit').textContent = fitLabels[s.fitMode] || s.fitMode;
 }
 
 generateBtn.addEventListener('click', async () => {
