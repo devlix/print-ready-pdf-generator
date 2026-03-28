@@ -482,6 +482,7 @@ const PAGE_SIZES = {
 };
 
 let loadedImage = null;
+let originalFilename = 'image';
 
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('fileInput');
@@ -526,7 +527,7 @@ document.querySelectorAll('input[name="fitMode"]').forEach(el => {
 
 function loadFile(file) {
   if (!file.type.startsWith('image/')) { setStatus('Please upload an image file.', 'err'); return; }
-  const reader = new FileReader();
+  originalFilename = file.name.replace(/\.[^/.]+$/, '');const reader = new FileReader();
   reader.onload = e => {
     const img = new Image();
     img.onload = () => {
@@ -700,7 +701,7 @@ generateBtn.addEventListener('click', async () => {
     const format = pageFormatEl.value === 'custom' ? 'custom' : pageFormatEl.value;
     pdf.setProperties({ title: 'Print-Ready PDF', subject: `${format} + ${s.bleedMm}mm bleed` });
     pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH, '', 'FAST');
-    pdf.save(`print_${format}_bleed${s.bleedMm}mm.pdf`);
+	pdf.save(`${originalFilename}_print_${format}_bleed${s.bleedMm}mm.pdf`);
 
     setStatus(`✓ PDF saved — ${pdfW}×${pdfH}mm @ ${s.dpi}dpi`, 'ok');
   } catch (err) {
