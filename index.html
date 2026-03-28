@@ -361,7 +361,7 @@
   <header>
     <div class="label">Print Automation</div>
     <h1>Image → <span>Print-Ready PDF</span></h1>
-    <p class="subtitle">Generates A5 PDF with bleed and crop marks, ready for the press.</p>
+    <p class="subtitle">Generates PDF with bleed and crop marks, ready for the press.</p>
   </header>
 
   <div class="dropzone" id="dropzone">
@@ -410,8 +410,12 @@
     </div>
 
     <div class="field">
-      <label>Bleed (mm)</label>
-      <input type="number" id="bleedMm" value="3" min="0" max="10" step="0.5">
+      <label>Resolution (DPI)</label>
+      <select id="dpi">
+        <option value="300" selected>300 dpi</option>
+        <option value="350">350 dpi</option>
+        <option value="400">400 dpi</option>
+      </select>
     </div>
     <div class="field">
       <label>Fit Image To</label>
@@ -423,12 +427,8 @@
       </div>
     </div>
     <div class="field">
-      <label>Resolution (DPI)</label>
-      <select id="dpi">
-        <option value="300" selected>300 dpi</option>
-        <option value="350">350 dpi</option>
-        <option value="400">400 dpi</option>
-      </select>
+      <label>Bleed (mm)</label>
+      <input type="number" id="bleedMm" value="3" min="0" max="10" step="0.5">
     </div>
     <div class="field">
       <label>Crop Mark Length (mm)</label>
@@ -436,12 +436,14 @@
     </div>
     <div class="field">
       <label class="checkbox-row">
-        <input type="checkbox" id="showCropMarks" checked>
-        <span>Crop marks</span>
-      </label>
-      <label class="checkbox-row">
         <input type="checkbox" id="showBleedBox" checked>
         <span>Bleed box guide</span>
+      </label>
+    </div>
+    <div class="field">
+      <label class="checkbox-row">
+        <input type="checkbox" id="showCropMarks" checked>
+        <span>Crop marks</span>
       </label>
     </div>
   </div>
