@@ -336,13 +336,13 @@
   }
 
   .orient-icon {
-    width: 11px; height: 16px;
+    width: 14px; height: 14px;
     border: 1.5px solid currentColor;
     border-radius: 1px;
     display: inline-block;
     flex-shrink: 0;
   }
-  .orient-icon.land { width: 18px; height: 11px; }
+  .orient-icon.land { width: 18px; height: 13px; }
 
   .spinner {
     width: 14px; height: 14px;
@@ -361,7 +361,7 @@
   <header>
     <div class="label">Print Automation</div>
     <h1>Image → <span>Print-Ready PDF</span></h1>
-    <p class="subtitle">Generates PDF with bleed and crop marks, ready for the press.</p>
+    <p class="subtitle">Generates A5 PDF with bleed and crop marks, ready for the press.</p>
   </header>
 
   <div class="dropzone" id="dropzone">
@@ -410,12 +410,8 @@
     </div>
 
     <div class="field">
-      <label>Resolution (DPI)</label>
-      <select id="dpi">
-        <option value="300" selected>300 dpi</option>
-        <option value="350">350 dpi</option>
-        <option value="400">400 dpi</option>
-      </select>
+      <label>Bleed (mm)</label>
+      <input type="number" id="bleedMm" value="3" min="0" max="10" step="0.5">
     </div>
     <div class="field">
       <label>Bleed Method</label>
@@ -425,27 +421,25 @@
         <input type="radio" name="fitMode" id="fitWidth" value="width">
         <label for="fitWidth">↔ Width</label>
         <input type="radio" name="fitMode" id="fitAddBleed" value="addbleed">
-		<label for="fitAddBleed">⤢ Add bleed</label>
+        <label for="fitAddBleed">⤢ Add bleed</label>
       </div>
     </div>
     <div class="field">
-      <label>Bleed (mm)</label>
-      <input type="number" id="bleedMm" value="3" min="0" max="10" step="0.5">
-    </div>
-    <div class="field">
-      <label>Crop Mark Length (mm)</label>
-      <input type="number" id="markLen" value="5" min="2" max="15" step="0.5">
-    </div>
-    <div class="field">
-      <label class="checkbox-row">
-        <input type="checkbox" id="showBleedBox" checked>
-        <span>Bleed box guide</span>
-      </label>
+      <label>Resolution (DPI)</label>
+      <select id="dpi">
+        <option value="300" selected>300 dpi</option>
+        <option value="350">350 dpi</option>
+        <option value="400">400 dpi</option>
+      </select>
     </div>
     <div class="field">
       <label class="checkbox-row">
         <input type="checkbox" id="showCropMarks" checked>
         <span>Crop marks</span>
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="showBleedBox" checked>
+        <span>Trim line <span style="opacity:0.5;font-size:0.8em">(guide only)</span></span>
       </label>
     </div>
   </div>
@@ -517,7 +511,7 @@ dropzone.addEventListener('drop', e => {
 fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
 
 // Settings change → re-render preview
-['pageFormat','bleedMm','dpi','markLen','showCropMarks','showBleedBox','customW','customH'].forEach(id => {
+['pageFormat','bleedMm','dpi','showCropMarks','showBleedBox','customW','customH'].forEach(id => {
   document.getElementById(id).addEventListener('change', () => { if (loadedImage) { renderPreview(); updateSpecs(); } });
 });
 document.querySelectorAll('input[name="orientation"]').forEach(el => {
@@ -529,7 +523,8 @@ document.querySelectorAll('input[name="fitMode"]').forEach(el => {
 
 function loadFile(file) {
   if (!file.type.startsWith('image/')) { setStatus('Please upload an image file.', 'err'); return; }
-  originalFilename = file.name.replace(/\.[^/.]+$/, '');const reader = new FileReader();
+  originalFilename = file.name.replace(/\.[^/.]+$/, ''); // strip extension
+  const reader = new FileReader();
   reader.onload = e => {
     const img = new Image();
     img.onload = () => {
@@ -566,22 +561,19 @@ function getSettings() {
   const bleedVal = document.getElementById('bleedMm').value;
   const bleedMm  = bleedVal === '' ? 3 : Math.max(0, parseFloat(bleedVal));
   const dpi      = parseInt(document.getElementById('dpi').value);
-  const markLenMm = parseFloat(document.getElementById('markLen').value) || 5;
   const showCropMarks = document.getElementById('showCropMarks').checked;
   const showBleedBox  = document.getElementById('showBleedBox').checked;
-  const fitMode  = document.querySelector('input[name="fitMode"]:checked').value; // 'height' | 'width'
+  const fitMode  = document.querySelector('input[name="fitMode"]:checked').value;
 
   const MM       = dpi / 25.4;
   const trimWpx  = Math.round(trimW * MM);
   const trimHpx  = Math.round(trimH * MM);
   const bleedPx  = Math.round(bleedMm * MM);
-  const markLenPx = Math.round(markLenMm * MM);
-  const markOffPx = Math.round(2 * MM);
   const totalW   = trimWpx + 2 * bleedPx;
   const totalH   = trimHpx + 2 * bleedPx;
 
-  return { trimW, trimH, bleedMm, dpi, markLenMm, showCropMarks, showBleedBox, fitMode,
-           MM, trimWpx, trimHpx, bleedPx, markLenPx, markOffPx, totalW, totalH };
+  return { trimW, trimH, bleedMm, dpi, showCropMarks, showBleedBox, fitMode,
+           MM, trimWpx, trimHpx, bleedPx, totalW, totalH };
 }
 
 function sampleBackgroundColor(img) {
@@ -617,12 +609,10 @@ function renderToCanvas(canvas, s) {
   canvas.height = s.totalH;
   const ctx = canvas.getContext('2d');
 
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, s.totalW, s.totalH);
-
-  // Scale image to fit — height or width, centered on the other axis
+  // Scale image to fit — height, width, or add bleed mode
   const img = loadedImage;
-  let scaledW, scaledH, xOff, yOff;
+  let scaledW, scaledH, xOff, yOff, bgColor;
+
   if (s.fitMode === 'addbleed') {
     // Image fills trim area exactly, bleed zone padded with sampled background color
     bgColor = sampleBackgroundColor(img);
@@ -659,7 +649,7 @@ function renderToCanvas(canvas, s) {
   }
   ctx.drawImage(img, xOff, yOff, scaledW, scaledH);
 
-  // Bleed box guide
+  // Trim line — dashed guide showing where the cut will happen (guide only, not needed for print)
   if (s.showBleedBox) {
     ctx.save();
     ctx.strokeStyle = 'rgba(200,68,10,0.5)';
@@ -669,26 +659,41 @@ function renderToCanvas(canvas, s) {
     ctx.restore();
   }
 
-  // Crop marks
+  // Crop marks — live in the bleed zone, pointing to the trim line
+  // They start 1mm outside the trim line and end 1mm before the canvas edge
   if (s.showCropMarks) {
     ctx.save();
     ctx.strokeStyle = '#000000';
     ctx.lineWidth   = Math.max(1, Math.round(0.25 * s.MM));
     ctx.setLineDash([]);
 
-    const { bleedPx: b, trimWpx: tw, trimHpx: th, markOffPx: off, markLenPx: len } = s;
+    const { bleedPx: b, trimWpx: tw, trimHpx: th, MM } = s;
+    const gapPx = Math.round(1 * MM);   // 1mm gap between trim line and start of mark
+    const marginPx = Math.round(1 * MM); // 1mm margin from canvas edge
+
+    // Marks start just outside trim line (gap) and extend toward canvas edge (stopping 1mm short)
+    const markLen = b - gapPx - marginPx; // available space in bleed zone for the mark
+
     const corners = [
-      { x: b,      y: b      },
-      { x: b + tw, y: b      },
-      { x: b,      y: b + th },
-      { x: b + tw, y: b + th },
+      { x: b,      y: b      },   // top-left
+      { x: b + tw, y: b      },   // top-right
+      { x: b,      y: b + th },   // bottom-left
+      { x: b + tw, y: b + th },   // bottom-right
     ];
 
     corners.forEach(({ x, y }) => {
       const dx = x === b ? -1 : 1;
       const dy = y === b ? -1 : 1;
-      ctx.beginPath(); ctx.moveTo(x + dx * off, y);         ctx.lineTo(x + dx * (off + len), y);         ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(x, y + dy * off);         ctx.lineTo(x, y + dy * (off + len));         ctx.stroke();
+      // Horizontal mark: starts gapPx outside trim, extends markLen toward canvas edge
+      ctx.beginPath();
+      ctx.moveTo(x + dx * gapPx, y);
+      ctx.lineTo(x + dx * (gapPx + markLen), y);
+      ctx.stroke();
+      // Vertical mark
+      ctx.beginPath();
+      ctx.moveTo(x, y + dy * gapPx);
+      ctx.lineTo(x, y + dy * (gapPx + markLen));
+      ctx.stroke();
     });
     ctx.restore();
   }
@@ -752,7 +757,7 @@ generateBtn.addEventListener('click', async () => {
     const format = pageFormatEl.value === 'custom' ? 'custom' : pageFormatEl.value;
     pdf.setProperties({ title: 'Print-Ready PDF', subject: `${format} + ${s.bleedMm}mm bleed` });
     pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH, '', 'FAST');
-	pdf.save(`${originalFilename}_print_${format}_bleed${s.bleedMm}mm.pdf`);
+    pdf.save(`${originalFilename}_print_${format}_bleed${s.bleedMm}mm.pdf`);
 
     setStatus(`✓ PDF saved — ${pdfW}×${pdfH}mm @ ${s.dpi}dpi`, 'ok');
   } catch (err) {
