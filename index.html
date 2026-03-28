@@ -668,11 +668,7 @@ function renderToCanvas(canvas, s) {
     ctx.setLineDash([]);
 
     const { bleedPx: b, trimWpx: tw, trimHpx: th, MM } = s;
-    const gapPx = Math.round(1 * MM);   // 1mm gap between trim line and start of mark
-    const marginPx = Math.round(1 * MM); // 1mm margin from canvas edge
-
-    // Marks start just outside trim line (gap) and extend toward canvas edge (stopping 1mm short)
-    const markLen = b - gapPx - marginPx; // available space in bleed zone for the mark
+    const gapPx = Math.round(0.5 * MM);  // 0.5mm gap at trim line on each side
 
     const corners = [
       { x: b,      y: b      },   // top-left
@@ -684,15 +680,15 @@ function renderToCanvas(canvas, s) {
     corners.forEach(({ x, y }) => {
       const dx = x === b ? -1 : 1;
       const dy = y === b ? -1 : 1;
-      // Horizontal mark: starts gapPx outside trim, extends markLen toward canvas edge
+      // Horizontal mark: 0.5mm gap from trim line, extends all the way to canvas edge
       ctx.beginPath();
       ctx.moveTo(x + dx * gapPx, y);
-      ctx.lineTo(x + dx * (gapPx + markLen), y);
+      ctx.lineTo(x + dx * b, y);
       ctx.stroke();
       // Vertical mark
       ctx.beginPath();
       ctx.moveTo(x, y + dy * gapPx);
-      ctx.lineTo(x, y + dy * (gapPx + markLen));
+      ctx.lineTo(x, y + dy * b);
       ctx.stroke();
     });
     ctx.restore();
