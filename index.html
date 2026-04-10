@@ -5,525 +5,498 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Print PDF Generator</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,300;8..144,400;8..144,500;8..144,700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap');
-
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --ink: #0f0f0f;
-    --paper: #f5f2ed;
-    --accent: #c8440a;
-    --muted: #8a8278;
-    --border: #d4cfc8;
-    --success: #2a6e3f;
+    --md-sys-color-primary:            #aac7ff;
+    --md-sys-color-on-primary:         #0a305f;
+    --md-sys-color-primary-container:  #284777;
+    --md-sys-color-on-primary-container: #d6e3ff;
+    --md-sys-color-secondary:          #bbc7db;
+    --md-sys-color-on-secondary:       #253140;
+    --md-sys-color-secondary-container:#3b4858;
+    --md-sys-color-on-secondary-container: #d7e3f7;
+    --md-sys-color-surface:            #111318;
+    --md-sys-color-surface-variant:    #44474f;
+    --md-sys-color-surface-container:  #1d2024;
+    --md-sys-color-surface-container-high: #272a2f;
+    --md-sys-color-surface-container-highest: #323539;
+    --md-sys-color-on-surface:         #e2e2e9;
+    --md-sys-color-on-surface-variant: #c4c6d0;
+    --md-sys-color-outline:            #8e9099;
+    --md-sys-color-outline-variant:    #44474f;
+    --md-sys-color-error:              #ffb4ab;
+    --md-sys-color-success:            #6dd58c;
+    --md-shape-corner-small:           8px;
+    --md-shape-corner-medium:          12px;
+    --md-shape-corner-large:           16px;
+    --md-shape-corner-full:            9999px;
   }
 
   body {
-    background: var(--paper);
-    color: var(--ink);
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 300;
+    background: var(--md-sys-color-surface);
+    color: var(--md-sys-color-on-surface);
+    font-family: 'Roboto Flex', sans-serif;
+    font-weight: 400;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 2rem;
+    padding: 2rem 1rem 4rem;
   }
 
-  .wrapper {
-    width: 100%;
-    max-width: 680px;
-  }
+  .wrapper { width: 100%; max-width: 600px; }
 
-  header {
-    margin-bottom: 3rem;
-  }
+  header { padding: 2rem 0 2rem; }
 
-  .label {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    letter-spacing: 0.2em;
+  .eyebrow {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--md-sys-color-primary);
     margin-bottom: 0.5rem;
   }
 
   h1 {
-    font-size: 2rem;
+    font-size: 1.75rem;
     font-weight: 300;
-    line-height: 1.15;
-    letter-spacing: -0.02em;
-  }
-
-  h1 span {
-    color: var(--muted);
+    line-height: 1.2;
+    color: var(--md-sys-color-on-surface);
+    letter-spacing: -0.01em;
   }
 
   .subtitle {
-    margin-top: 0.75rem;
-    color: var(--muted);
-    font-size: 0.9rem;
-    line-height: 1.6;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--md-sys-color-on-surface-variant);
+    line-height: 1.5;
   }
 
-  /* Drop zone */
-  .dropzone {
-    border: 1.5px dashed var(--border);
-    border-radius: 2px;
-    padding: 3rem 2rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    background: white;
-    margin-bottom: 2rem;
-  }
-
-  .dropzone:hover, .dropzone.dragover {
-    border-color: var(--accent);
-    background: #fdf9f6;
-  }
-
-  .dropzone input[type="file"] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-    width: 100%;
-    height: 100%;
-  }
-
-  .drop-icon {
-    width: 40px;
-    height: 40px;
-    margin: 0 auto 1rem;
-    opacity: 0.3;
-  }
-
-  .drop-text {
-    font-size: 0.9rem;
-    color: var(--muted);
-  }
-
-  .drop-text strong {
-    color: var(--ink);
-    font-weight: 500;
-  }
-
-  /* Settings */
-  .settings {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-
-  .field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-
-  .field label {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  .field select, .field input[type="number"] {
-    background: white;
-    border: 1.5px solid var(--border);
-    border-radius: 2px;
-    padding: 0.6rem 0.75rem;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
-    color: var(--ink);
-    appearance: none;
-    outline: none;
-    transition: border-color 0.2s;
-    width: 100%;
-  }
-
-  .field select:focus, .field input[type="number"]:focus {
-    border-color: var(--accent);
-  }
-
-  .field select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a8278'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.75rem center;
-    padding-right: 2rem;
-  }
-
-  .checkbox-row {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    cursor: pointer;
-    padding: 0.6rem 0;
-  }
-
-  .checkbox-row input[type="checkbox"] {
-    width: 16px; height: 16px;
-    accent-color: var(--accent);
-    cursor: pointer;
-  }
-
-  .checkbox-row span {
-    font-size: 0.9rem;
-    color: var(--ink);
-  }
-
-  /* Preview */
-  .preview-area {
-    display: none;
-    margin-bottom: 2rem;
-  }
-
-  .preview-area.visible { display: block; }
-
-  .preview-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--muted);
+  .card {
+    background: var(--md-sys-color-surface-container);
+    border-radius: var(--md-shape-corner-large);
+    padding: 1.25rem;
     margin-bottom: 0.75rem;
   }
 
-  .preview-canvas-wrap {
-    background: #888;
-    padding: 1.5rem;
-    display: flex;
-    justify-content: center;
-    border-radius: 2px;
-  }
-
-  #previewCanvas {
-    max-width: 100%;
-    max-height: 320px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
-  }
-
-  /* Button */
-  .btn {
-    width: 100%;
-    padding: 1rem;
-    background: var(--ink);
-    color: white;
-    border: none;
-    border-radius: 2px;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.75rem;
-    letter-spacing: 0.15em;
+  .card-title {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
+    color: var(--md-sys-color-on-surface-variant);
+    margin-bottom: 1rem;
+  }
+
+  .dropzone {
+    border: 1.5px dashed var(--md-sys-color-outline);
+    border-radius: var(--md-shape-corner-medium);
+    padding: 2.5rem 1.5rem;
+    text-align: center;
     cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+  }
+
+  .dropzone:hover, .dropzone.dragover {
+    border-color: var(--md-sys-color-primary);
+    background: rgba(170,199,255,0.05);
+  }
+
+  .dropzone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+
+  .drop-icon {
+    width: 36px; height: 36px; margin: 0 auto 0.875rem;
+    color: var(--md-sys-color-on-surface-variant);
+  }
+
+  .drop-primary { font-size: 0.9rem; font-weight: 500; color: var(--md-sys-color-on-surface); }
+  .drop-secondary { font-size: 0.78rem; color: var(--md-sys-color-on-surface-variant); margin-top: 0.25rem; }
+
+  .filename-chip {
+    display: none;
     align-items: center;
-    justify-content: center;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
+    padding: 0.3rem 0.75rem;
+    background: var(--md-sys-color-primary-container);
+    color: var(--md-sys-color-on-primary-container);
+    border-radius: var(--md-shape-corner-full);
+    font-size: 0.8rem;
+    font-weight: 500;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 0.75rem;
   }
+  .settings-grid .full-width { grid-column: 1 / -1; }
 
-  .btn:hover:not(:disabled) {
-    background: var(--accent);
+  .md-field { display: flex; flex-direction: column; gap: 0.375rem; }
+
+  .md-field-label {
+    font-size: 0.72rem; font-weight: 500;
+    color: var(--md-sys-color-on-surface-variant); letter-spacing: 0.03em;
   }
 
-  .btn:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
+  .md-field select,
+  .md-field input[type="number"] {
+    background: var(--md-sys-color-surface-container-high);
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-shape-corner-small);
+    padding: 0.65rem 0.875rem;
+    font-family: 'Roboto Flex', sans-serif;
+    font-size: 0.9rem;
+    color: var(--md-sys-color-on-surface);
+    appearance: none; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
   }
 
-  .btn.generating {
-    background: var(--accent);
+  .md-field select:focus,
+  .md-field input[type="number"]:focus {
+    border-color: var(--md-sys-color-primary);
+    box-shadow: 0 0 0 2px rgba(170,199,255,0.15);
   }
 
-  /* Status */
-  .status {
-    margin-top: 1rem;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.75rem;
-    color: var(--muted);
-    text-align: center;
-    min-height: 1.2em;
-    transition: color 0.2s;
+  .md-field select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23c4c6d0'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.875rem center;
+    padding-right: 2.25rem;
   }
 
-  .status.ok { color: var(--success); }
-  .status.err { color: #c0392b; }
-
-  /* Specs bar */
-  .specs {
-    display: flex;
-    gap: 1.5rem;
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border);
-    flex-wrap: wrap;
-  }
-
-  .spec {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-  }
-
-  .spec-key {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.6rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  .spec-val {
-    font-size: 0.85rem;
-    color: var(--ink);
-    font-weight: 500;
-  }
-
-  /* Custom format row */
   .custom-format {
     display: none;
-    grid-column: 1 / -1;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    padding: 1rem;
-    background: white;
-    border: 1.5px solid var(--border);
-    border-radius: 2px;
+    gap: 0.75rem;
+    grid-column: 1 / -1;
+    padding: 0.875rem;
+    background: var(--md-sys-color-surface-container-highest);
+    border-radius: var(--md-shape-corner-small);
+    border-left: 3px solid var(--md-sys-color-primary);
   }
   .custom-format.visible { display: grid; }
 
-  /* Orientation toggle */
-  .orientation-toggle {
+  .seg-label {
+    font-size: 0.72rem; font-weight: 500;
+    color: var(--md-sys-color-on-surface-variant);
+    margin-bottom: 0.375rem; letter-spacing: 0.03em;
+  }
+
+  .seg-btn {
     display: flex;
-    gap: 0;
-    border: 1.5px solid var(--border);
-    border-radius: 2px;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-shape-corner-full);
     overflow: hidden;
-    background: white;
   }
 
-  .orientation-toggle input[type="radio"] { display: none; }
+  .seg-btn input[type="radio"] { display: none; }
 
-  .orientation-toggle label {
+  .seg-btn label {
     flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    padding: 0.6rem 0.5rem;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
+    display: flex; align-items: center; justify-content: center; gap: 0.35rem;
+    padding: 0.55rem 0.5rem;
+    font-size: 0.78rem; font-weight: 500;
+    color: var(--md-sys-color-on-surface);
     cursor: pointer;
-    transition: all 0.15s;
-    border-right: 1.5px solid var(--border);
+    transition: background 0.15s, color 0.15s;
+    border-right: 1px solid var(--md-sys-color-outline);
+    text-align: center; line-height: 1.2;
+  }
+  .seg-btn label:last-of-type { border-right: none; }
+  .seg-btn input[type="radio"]:checked + label {
+    background: var(--md-sys-color-secondary-container);
+    color: var(--md-sys-color-on-secondary-container);
   }
 
-  .orientation-toggle label:last-of-type { border-right: none; }
+  .md-checkbox {
+    display: flex; align-items: center; gap: 0.75rem;
+    cursor: pointer; padding: 0.5rem 0.375rem;
+    border-radius: var(--md-shape-corner-small);
+    transition: background 0.15s;
+  }
+  .md-checkbox:hover { background: rgba(255,255,255,0.04); }
+  .md-checkbox input[type="checkbox"] {
+    width: 18px; height: 18px;
+    accent-color: var(--md-sys-color-primary);
+    cursor: pointer; flex-shrink: 0;
+  }
+  .md-checkbox span { font-size: 0.875rem; color: var(--md-sys-color-on-surface); line-height: 1.3; }
+  .md-checkbox .hint { font-size: 0.72rem; color: var(--md-sys-color-on-surface-variant); }
 
-  .orientation-toggle input[type="radio"]:checked + label {
-    background: var(--ink);
-    color: white;
+  .preview-area { display: none; margin-bottom: 0.75rem; }
+  .preview-area.visible { display: block; }
+
+  .preview-canvas-wrap {
+    background: #1a1a1a;
+    padding: 1.25rem;
+    display: flex; justify-content: center;
+    border-radius: var(--md-shape-corner-medium);
   }
 
-  .orient-icon {
-    width: 14px; height: 14px;
-    border: 1.5px solid currentColor;
-    border-radius: 1px;
-    display: inline-block;
-    flex-shrink: 0;
+  #previewCanvas {
+    max-width: 100%; max-height: 300px;
+    border-radius: 2px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.6);
   }
-  .orient-icon.land { width: 18px; height: 13px; }
+
+  .btn-generate {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    background: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+    border: none;
+    border-radius: var(--md-shape-corner-large);
+    font-family: 'Roboto Flex', sans-serif;
+    font-size: 0.95rem; font-weight: 600;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    transition: box-shadow 0.2s, filter 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 0.625rem;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+    margin-bottom: 0.75rem;
+  }
+  .btn-generate:hover:not(:disabled) {
+    filter: brightness(1.08);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+  }
+  .btn-generate:disabled {
+    background: rgba(226,226,233,0.12);
+    color: rgba(226,226,233,0.38);
+    box-shadow: none; cursor: not-allowed;
+  }
+
+  .status {
+    text-align: center; font-size: 0.8rem;
+    color: var(--md-sys-color-on-surface-variant);
+    min-height: 1.2em; padding: 0.25rem 0;
+    margin-bottom: 0.75rem;
+    transition: color 0.2s;
+  }
+  .status.ok  { color: var(--md-sys-color-success); }
+  .status.err { color: var(--md-sys-color-error); }
+
+  .specs {
+    display: none; flex-wrap: wrap; gap: 0.5rem;
+    padding: 1rem 1.25rem;
+    background: var(--md-sys-color-surface-container);
+    border-radius: var(--md-shape-corner-large);
+  }
+  .specs.visible { display: flex; }
+
+  .spec-chip {
+    display: flex; flex-direction: column; gap: 0.1rem;
+    padding: 0.4rem 0.75rem;
+    background: var(--md-sys-color-surface-container-high);
+    border-radius: var(--md-shape-corner-full);
+  }
+  .spec-key {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.58rem; letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--md-sys-color-on-surface-variant);
+  }
+  .spec-val { font-size: 0.82rem; font-weight: 500; color: var(--md-sys-color-on-surface); }
 
   .spinner {
-    width: 14px; height: 14px;
-    border: 2px solid rgba(255,255,255,0.3);
-    border-top-color: white;
+    width: 18px; height: 18px;
+    border: 2px solid rgba(10,48,95,0.4);
+    border-top-color: var(--md-sys-color-on-primary);
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
-    display: none;
+    display: none; flex-shrink: 0;
   }
-
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 <div class="wrapper">
+
   <header>
-    <div class="label">Print Automation</div>
-    <h1>Image → <span>Print-Ready PDF</span></h1>
-    <p class="subtitle">Generates A5 PDF with bleed and crop marks, ready for the press.</p>
+    <div class="eyebrow">Print Automation</div>
+    <h1>Image → Print-Ready PDF</h1>
+    <p class="subtitle">Generates PDF with bleed and crop marks, ready for the press.</p>
   </header>
 
-  <div class="dropzone" id="dropzone">
-    <input type="file" id="fileInput" accept="image/*">
-    <svg class="drop-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="4" y="8" width="32" height="26" rx="1" stroke="#0f0f0f" stroke-width="1.5"/>
-      <path d="M4 28l9-9 7 7 5-5 11 9" stroke="#0f0f0f" stroke-width="1.5" stroke-linejoin="round"/>
-      <circle cx="13" cy="17" r="3" stroke="#0f0f0f" stroke-width="1.5"/>
-    </svg>
-    <p class="drop-text"><strong>Drop image here</strong> or click to browse</p>
-    <p class="drop-text" style="font-size:0.78rem;margin-top:0.3rem;">JPG, PNG, TIFF, WebP</p>
+  <div class="card">
+    <div class="card-title">Source image</div>
+    <div class="dropzone" id="dropzone">
+      <input type="file" id="fileInput" accept="image/*">
+      <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <path d="M21 15l-5-5L5 21"/>
+      </svg>
+      <div class="drop-primary">Drop image here or click to browse</div>
+      <div class="drop-secondary">JPG · PNG · TIFF · WebP</div>
+      <div class="filename-chip" id="filenameChip">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM6 20V4h5v7h7v9H6z"/></svg>
+        <span id="filenameLabel">—</span>
+      </div>
+    </div>
   </div>
 
-  <div class="settings">
-    <div class="field">
-      <label>Page Format</label>
-      <select id="pageFormat">
-        <option value="A5" selected>A5 — 148 × 210 mm</option>
-        <option value="A4">A4 — 210 × 297 mm</option>
-        <option value="A3">A3 — 297 × 420 mm</option>
-        <option value="A6">A6 — 105 × 148 mm</option>
-        <option value="Letter">Letter — 216 × 279 mm</option>
-        <option value="custom">Custom…</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Orientation</label>
-      <div class="orientation-toggle">
-        <input type="radio" name="orientation" id="orientPortrait" value="portrait" checked>
-        <label for="orientPortrait"><span class="orient-icon"></span>Portrait</label>
-        <input type="radio" name="orientation" id="orientLandscape" value="landscape">
-        <label for="orientLandscape"><span class="orient-icon land"></span>Landscape</label>
+  <div class="card">
+    <div class="card-title">Page</div>
+    <div class="settings-grid">
+      <div class="md-field">
+        <div class="md-field-label">Format</div>
+        <select id="pageFormat">
+          <option value="A5" selected>A5 — 148 × 210 mm</option>
+          <option value="A4">A4 — 210 × 297 mm</option>
+          <option value="A3">A3 — 297 × 420 mm</option>
+          <option value="A6">A6 — 105 × 148 mm</option>
+          <option value="Letter">Letter — 216 × 279 mm</option>
+          <option value="custom">Custom…</option>
+        </select>
+      </div>
+      <div class="md-field">
+        <div class="md-field-label">Orientation</div>
+        <div class="seg-btn">
+          <input type="radio" name="orientation" id="orientPortrait" value="portrait" checked>
+          <label for="orientPortrait">↕ Portrait</label>
+          <input type="radio" name="orientation" id="orientLandscape" value="landscape">
+          <label for="orientLandscape">↔ Landscape</label>
+        </div>
+      </div>
+      <div class="custom-format" id="customFormat">
+        <div class="md-field">
+          <div class="md-field-label">Width (mm)</div>
+          <input type="number" id="customW" value="148" min="10" max="1200" step="0.5">
+        </div>
+        <div class="md-field">
+          <div class="md-field-label">Height (mm)</div>
+          <input type="number" id="customH" value="210" min="10" max="1200" step="0.5">
+        </div>
       </div>
     </div>
+  </div>
 
-    <!-- Custom format (shown when "custom" selected) -->
-    <div class="custom-format" id="customFormat">
-      <div class="field">
-        <label>Width (mm)</label>
-        <input type="number" id="customW" value="148" min="10" max="1200" step="0.5">
+  <div class="card">
+    <div class="card-title">Bleed &amp; Image</div>
+    <div class="settings-grid">
+      <div class="md-field">
+        <div class="md-field-label">Bleed (mm)</div>
+        <input type="number" id="bleedMm" value="3" min="0" max="30" step="0.5">
       </div>
-      <div class="field">
-        <label>Height (mm)</label>
-        <input type="number" id="customH" value="210" min="10" max="1200" step="0.5">
+      <div class="md-field">
+        <div class="md-field-label">Resolution (DPI)</div>
+        <select id="dpi">
+          <option value="300" selected>300 dpi</option>
+          <option value="350">350 dpi</option>
+          <option value="400">400 dpi</option>
+        </select>
+      </div>
+      <div class="md-field full-width">
+        <div class="seg-label">Bleed Method</div>
+        <div class="seg-btn">
+          <input type="radio" name="fitMode" id="fitHeight" value="height" checked>
+          <label for="fitHeight">↕ Height</label>
+          <input type="radio" name="fitMode" id="fitWidth" value="width">
+          <label for="fitWidth">↔ Width</label>
+          <input type="radio" name="fitMode" id="fitAddBleed" value="addbleed">
+          <label for="fitAddBleed">⤢ Add bleed</label>
+        </div>
       </div>
     </div>
+  </div>
 
-    <div class="field">
-      <label>Bleed (mm)</label>
-      <input type="number" id="bleedMm" value="3" min="0" max="10" step="0.5">
-    </div>
-    <div class="field">
-      <label>Bleed Method</label>
-      <div class="orientation-toggle">
-        <input type="radio" name="fitMode" id="fitHeight" value="height" checked>
-        <label for="fitHeight">↕ Height</label>
-        <input type="radio" name="fitMode" id="fitWidth" value="width">
-        <label for="fitWidth">↔ Width</label>
-        <input type="radio" name="fitMode" id="fitAddBleed" value="addbleed">
-        <label for="fitAddBleed">⤢ Add bleed</label>
-      </div>
-    </div>
-    <div class="field">
-      <label>Resolution (DPI)</label>
-      <select id="dpi">
-        <option value="300" selected>300 dpi</option>
-        <option value="350">350 dpi</option>
-        <option value="400">400 dpi</option>
-      </select>
-    </div>
-    <div class="field">
-      <label class="checkbox-row">
-        <input type="checkbox" id="showCropMarks" checked>
-        <span>Crop marks</span>
-      </label>
-      <label class="checkbox-row">
-        <input type="checkbox" id="showBleedBox" checked>
-        <span>Trim line <span style="opacity:0.5;font-size:0.8em">(guide only)</span></span>
-      </label>
-    </div>
+  <div class="card">
+    <div class="card-title">Print guides</div>
+    <label class="md-checkbox">
+      <input type="checkbox" id="showCropMarks" checked>
+      <span>Crop marks</span>
+    </label>
+    <label class="md-checkbox">
+      <input type="checkbox" id="showBleedBox" checked>
+      <span>Trim line <span class="hint">(guide only — not needed for print)</span></span>
+    </label>
   </div>
 
   <div class="preview-area" id="previewArea">
-    <div class="preview-label">Preview (with bleed + marks)</div>
-    <div class="preview-canvas-wrap">
-      <canvas id="previewCanvas"></canvas>
+    <div class="card">
+      <div class="card-title">Preview</div>
+      <div class="preview-canvas-wrap">
+        <canvas id="previewCanvas"></canvas>
+      </div>
     </div>
   </div>
 
-  <button class="btn" id="generateBtn" disabled>
+  <button class="btn-generate" id="generateBtn" disabled>
     <div class="spinner" id="spinner"></div>
+    <svg id="btnIcon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 8v2h14v-2H5z"/></svg>
     <span id="btnText">Generate Print PDF</span>
   </button>
 
   <div class="status" id="status">Upload an image to begin</div>
 
-  <div class="specs" id="specs" style="display:none">
-    <div class="spec"><div class="spec-key">Trim Size</div><div class="spec-val" id="specTrim">—</div></div>
-    <div class="spec"><div class="spec-key">With Bleed</div><div class="spec-val" id="specBleed">—</div></div>
-    <div class="spec"><div class="spec-key">Resolution</div><div class="spec-val" id="specDpi">—</div></div>
-    <div class="spec"><div class="spec-key">Orientation</div><div class="spec-val" id="specOrient">—</div></div>
-    <div class="spec"><div class="spec-key">Image Fit</div><div class="spec-val" id="specFit">—</div></div>
-    <div class="spec"><div class="spec-key">Color Mode</div><div class="spec-val">RGB</div></div>
+  <div class="specs" id="specs">
+    <div class="spec-chip"><div class="spec-key">Trim</div><div class="spec-val" id="specTrim">—</div></div>
+    <div class="spec-chip"><div class="spec-key">With bleed</div><div class="spec-val" id="specBleed">—</div></div>
+    <div class="spec-chip"><div class="spec-key">DPI</div><div class="spec-val" id="specDpi">—</div></div>
+    <div class="spec-chip"><div class="spec-key">Orientation</div><div class="spec-val" id="specOrient">—</div></div>
+    <div class="spec-chip"><div class="spec-key">Bleed method</div><div class="spec-val" id="specFit">—</div></div>
   </div>
-</div>
 
+</div>
 <script>
 const PAGE_SIZES = {
-  A3:     [297, 420],
-  A4:     [210, 297],
-  A5:     [148, 210],
-  A6:     [105, 148],
-  Letter: [216, 279],
+  A3: [297,420], A4: [210,297], A5: [148,210], A6: [105,148], Letter: [216,279]
 };
 
 let loadedImage = null;
 let originalFilename = 'image';
 
-const dropzone = document.getElementById('dropzone');
-const fileInput = document.getElementById('fileInput');
-const generateBtn = document.getElementById('generateBtn');
-const previewArea = document.getElementById('previewArea');
+const dropzone      = document.getElementById('dropzone');
+const fileInput     = document.getElementById('fileInput');
+const generateBtn   = document.getElementById('generateBtn');
+const previewArea   = document.getElementById('previewArea');
 const previewCanvas = document.getElementById('previewCanvas');
-const status = document.getElementById('status');
-const spinner = document.getElementById('spinner');
-const btnText = document.getElementById('btnText');
-const specs = document.getElementById('specs');
+const status        = document.getElementById('status');
+const spinner       = document.getElementById('spinner');
+const btnText       = document.getElementById('btnText');
+const btnIcon       = document.getElementById('btnIcon');
+const specs         = document.getElementById('specs');
 const customFormatEl = document.getElementById('customFormat');
-const pageFormatEl = document.getElementById('pageFormat');
+const pageFormatEl  = document.getElementById('pageFormat');
+const filenameChip  = document.getElementById('filenameChip');
+const filenameLabel = document.getElementById('filenameLabel');
 
-// Show/hide custom format fields
 pageFormatEl.addEventListener('change', () => {
-  const isCustom = pageFormatEl.value === 'custom';
-  customFormatEl.classList.toggle('visible', isCustom);
+  customFormatEl.classList.toggle('visible', pageFormatEl.value === 'custom');
   if (loadedImage) { renderPreview(); updateSpecs(); }
 });
 
-// Drag and drop
 dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
 dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
 dropzone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropzone.classList.remove('dragover');
-  const file = e.dataTransfer.files[0];
-  if (file) loadFile(file);
+  e.preventDefault(); dropzone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0]; if (file) loadFile(file);
 });
 fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
 
-// Settings change → re-render preview
 ['pageFormat','bleedMm','dpi','showCropMarks','showBleedBox','customW','customH'].forEach(id => {
   document.getElementById(id).addEventListener('change', () => { if (loadedImage) { renderPreview(); updateSpecs(); } });
 });
-document.querySelectorAll('input[name="orientation"]').forEach(el => {
-  el.addEventListener('change', () => { if (loadedImage) { renderPreview(); updateSpecs(); } });
-});
-document.querySelectorAll('input[name="fitMode"]').forEach(el => {
+document.querySelectorAll('input[name="orientation"], input[name="fitMode"]').forEach(el => {
   el.addEventListener('change', () => { if (loadedImage) { renderPreview(); updateSpecs(); } });
 });
 
 function loadFile(file) {
   if (!file.type.startsWith('image/')) { setStatus('Please upload an image file.', 'err'); return; }
-  originalFilename = file.name.replace(/\.[^/.]+$/, ''); // strip extension
+  originalFilename = file.name.replace(/\.[^/.]+$/, '');
+  filenameLabel.textContent = file.name;
+  filenameChip.style.display = 'inline-flex';
   const reader = new FileReader();
   reader.onload = e => {
     const img = new Image();
@@ -531,8 +504,7 @@ function loadFile(file) {
       loadedImage = img;
       generateBtn.disabled = false;
       setStatus('Image loaded — preview ready', '');
-      renderPreview();
-      updateSpecs();
+      renderPreview(); updateSpecs();
     };
     img.src = e.target.result;
   };
@@ -545,15 +517,9 @@ function getTrimDimensions() {
   if (format === 'custom') {
     w = parseFloat(document.getElementById('customW').value) || 148;
     h = parseFloat(document.getElementById('customH').value) || 210;
-  } else {
-    [w, h] = PAGE_SIZES[format];
-  }
-  // Apply orientation
+  } else { [w, h] = PAGE_SIZES[format]; }
   const landscape = document.querySelector('input[name="orientation"]:checked').value === 'landscape';
-  // portrait: short side = w, long side = h
-  const shortSide = Math.min(w, h);
-  const longSide  = Math.max(w, h);
-  return landscape ? [longSide, shortSide] : [shortSide, longSide];
+  return landscape ? [Math.max(w,h), Math.min(w,h)] : [Math.min(w,h), Math.max(w,h)];
 }
 
 function getSettings() {
@@ -564,132 +530,75 @@ function getSettings() {
   const showCropMarks = document.getElementById('showCropMarks').checked;
   const showBleedBox  = document.getElementById('showBleedBox').checked;
   const fitMode  = document.querySelector('input[name="fitMode"]:checked').value;
-
-  const MM       = dpi / 25.4;
-  const trimWpx  = Math.round(trimW * MM);
-  const trimHpx  = Math.round(trimH * MM);
-  const bleedPx  = Math.round(bleedMm * MM);
-  const totalW   = trimWpx + 2 * bleedPx;
-  const totalH   = trimHpx + 2 * bleedPx;
-
+  const MM = dpi / 25.4;
+  const trimWpx = Math.round(trimW * MM), trimHpx = Math.round(trimH * MM);
+  const bleedPx = Math.round(bleedMm * MM);
+  const totalW  = trimWpx + 2 * bleedPx, totalH = trimHpx + 2 * bleedPx;
   return { trimW, trimH, bleedMm, dpi, showCropMarks, showBleedBox, fitMode,
            MM, trimWpx, trimHpx, bleedPx, totalW, totalH };
 }
 
 function sampleBackgroundColor(img) {
-  // Draw image to a small offscreen canvas and sample the four corners
-  const size = 10;
-  const tmp = document.createElement('canvas');
+  const size = 10, tmp = document.createElement('canvas');
   tmp.width = img.width; tmp.height = img.height;
-  const ctx = tmp.getContext('2d');
-  ctx.drawImage(img, 0, 0);
-
+  const ctx = tmp.getContext('2d'); ctx.drawImage(img, 0, 0);
   const regions = [
-    ctx.getImageData(0, 0, size, size),                          // top-left
-    ctx.getImageData(img.width - size, 0, size, size),           // top-right
-    ctx.getImageData(0, img.height - size, size, size),          // bottom-left
-    ctx.getImageData(img.width - size, img.height - size, size, size), // bottom-right
+    ctx.getImageData(0,0,size,size),
+    ctx.getImageData(img.width-size,0,size,size),
+    ctx.getImageData(0,img.height-size,size,size),
+    ctx.getImageData(img.width-size,img.height-size,size,size),
   ];
-
-  let r = 0, g = 0, b = 0, count = 0;
+  let r=0,g=0,b=0,count=0;
   regions.forEach(d => {
-    for (let i = 0; i < d.data.length; i += 4) {
-      r += d.data[i]; g += d.data[i+1]; b += d.data[i+2];
-      count++;
-    }
+    for (let i=0;i<d.data.length;i+=4){r+=d.data[i];g+=d.data[i+1];b+=d.data[i+2];count++;}
   });
-  r = Math.round(r / count);
-  g = Math.round(g / count);
-  b = Math.round(b / count);
-  return `rgb(${r},${g},${b})`;
+  return `rgb(${Math.round(r/count)},${Math.round(g/count)},${Math.round(b/count)})`;
 }
 
 function renderToCanvas(canvas, s) {
-  canvas.width  = s.totalW;
-  canvas.height = s.totalH;
+  canvas.width = s.totalW; canvas.height = s.totalH;
   const ctx = canvas.getContext('2d');
-
-  // Scale image to fit — height, width, or add bleed mode
   const img = loadedImage;
-  let scaledW, scaledH, xOff, yOff, bgColor;
+  let scaledW, scaledH, xOff, yOff;
 
   if (s.fitMode === 'addbleed') {
-    // Image fills trim area exactly, bleed zone padded with sampled background color
-    bgColor = sampleBackgroundColor(img);
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, s.totalW, s.totalH);
-
-    // Scale image to fit within trim area (preserving aspect ratio, fit inside)
-    const scaleW = s.trimWpx / img.width;
-    const scaleH = s.trimHpx / img.height;
-    const scale  = Math.min(scaleW, scaleH);
-    scaledW = img.width * scale;
-    scaledH = img.height * scale;
-    // Center within trim area, offset by bleed
-    xOff = s.bleedPx + (s.trimWpx - scaledW) / 2;
-    yOff = s.bleedPx + (s.trimHpx - scaledH) / 2;
+    ctx.fillStyle = sampleBackgroundColor(img);
+    ctx.fillRect(0,0,s.totalW,s.totalH);
+    const scale = Math.min(s.trimWpx/img.width, s.trimHpx/img.height);
+    scaledW = img.width*scale; scaledH = img.height*scale;
+    xOff = s.bleedPx+(s.trimWpx-scaledW)/2; yOff = s.bleedPx+(s.trimHpx-scaledH)/2;
   } else {
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, s.totalW, s.totalH);
-
-    if (s.fitMode === 'width') {
-      const scale = s.totalW / img.width;
-      scaledW = s.totalW;
-      scaledH = img.height * scale;
-      xOff = 0;
-      yOff = (s.totalH - scaledH) / 2;
+    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,s.totalW,s.totalH);
+    if (s.fitMode==='width') {
+      const scale=s.totalW/img.width; scaledW=s.totalW; scaledH=img.height*scale;
+      xOff=0; yOff=(s.totalH-scaledH)/2;
     } else {
-      // height (default)
-      const scale = s.totalH / img.height;
-      scaledW = img.width * scale;
-      scaledH = s.totalH;
-      xOff = (s.totalW - scaledW) / 2;
-      yOff = 0;
+      const scale=s.totalH/img.height; scaledW=img.width*scale; scaledH=s.totalH;
+      xOff=(s.totalW-scaledW)/2; yOff=0;
     }
   }
   ctx.drawImage(img, xOff, yOff, scaledW, scaledH);
 
-  // Trim line — dashed guide showing where the cut will happen (guide only, not needed for print)
   if (s.showBleedBox) {
     ctx.save();
-    ctx.strokeStyle = 'rgba(200,68,10,0.5)';
-    ctx.lineWidth   = Math.max(1, Math.round(0.25 * s.MM));
-    ctx.setLineDash([Math.round(3 * s.MM), Math.round(2 * s.MM)]);
-    ctx.strokeRect(s.bleedPx, s.bleedPx, s.trimWpx, s.trimHpx);
+    ctx.strokeStyle='rgba(200,68,10,0.6)';
+    ctx.lineWidth=Math.max(1,Math.round(0.25*s.MM));
+    ctx.setLineDash([Math.round(3*s.MM),Math.round(2*s.MM)]);
+    ctx.strokeRect(s.bleedPx,s.bleedPx,s.trimWpx,s.trimHpx);
     ctx.restore();
   }
 
-  // Crop marks — live in the bleed zone, pointing to the trim line
-  // They start 1mm outside the trim line and end 1mm before the canvas edge
   if (s.showCropMarks) {
     ctx.save();
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth   = Math.max(1, Math.round(0.25 * s.MM));
+    ctx.strokeStyle='#000000';
+    ctx.lineWidth=Math.max(1,Math.round(0.25*s.MM));
     ctx.setLineDash([]);
-
-    const { bleedPx: b, trimWpx: tw, trimHpx: th, MM } = s;
-    const gapPx = Math.round(0.5 * MM);  // 0.5mm gap at trim line on each side
-
-    const corners = [
-      { x: b,      y: b      },   // top-left
-      { x: b + tw, y: b      },   // top-right
-      { x: b,      y: b + th },   // bottom-left
-      { x: b + tw, y: b + th },   // bottom-right
-    ];
-
-    corners.forEach(({ x, y }) => {
-      const dx = x === b ? -1 : 1;
-      const dy = y === b ? -1 : 1;
-      // Horizontal mark: 0.5mm gap from trim line, extends all the way to canvas edge
-      ctx.beginPath();
-      ctx.moveTo(x + dx * gapPx, y);
-      ctx.lineTo(x + dx * b, y);
-      ctx.stroke();
-      // Vertical mark
-      ctx.beginPath();
-      ctx.moveTo(x, y + dy * gapPx);
-      ctx.lineTo(x, y + dy * b);
-      ctx.stroke();
+    const {bleedPx:b,trimWpx:tw,trimHpx:th,MM}=s;
+    const gapPx=Math.round(0.5*MM);
+    [{x:b,y:b},{x:b+tw,y:b},{x:b,y:b+th},{x:b+tw,y:b+th}].forEach(({x,y})=>{
+      const dx=x===b?-1:1, dy=y===b?-1:1;
+      ctx.beginPath();ctx.moveTo(x+dx*gapPx,y);ctx.lineTo(x+dx*b,y);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x,y+dy*gapPx);ctx.lineTo(x,y+dy*b);ctx.stroke();
     });
     ctx.restore();
   }
@@ -698,82 +607,54 @@ function renderToCanvas(canvas, s) {
 function renderPreview() {
   const s = getSettings();
   previewArea.classList.add('visible');
-
-  const maxPreviewH = 600;
-  const previewScale = maxPreviewH / s.totalH;
-
-  const tempCanvas = document.createElement('canvas');
-  renderToCanvas(tempCanvas, s);
-
-  previewCanvas.width  = Math.round(s.totalW * previewScale);
-  previewCanvas.height = Math.round(s.totalH * previewScale);
-  const ctx = previewCanvas.getContext('2d');
-  ctx.drawImage(tempCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
+  const tmp = document.createElement('canvas');
+  renderToCanvas(tmp, s);
+  const scale = 560 / s.totalH;
+  previewCanvas.width  = Math.round(s.totalW * scale);
+  previewCanvas.height = Math.round(s.totalH * scale);
+  previewCanvas.getContext('2d').drawImage(tmp, 0, 0, previewCanvas.width, previewCanvas.height);
 }
 
 function updateSpecs() {
   const s = getSettings();
-  specs.style.display = 'flex';
+  specs.classList.add('visible');
   const orient = document.querySelector('input[name="orientation"]:checked').value;
-  document.getElementById('specTrim').textContent  = `${s.trimW} × ${s.trimH} mm`;
-  document.getElementById('specBleed').textContent = `${+(s.trimW + 2*s.bleedMm).toFixed(1)} × ${+(s.trimH + 2*s.bleedMm).toFixed(1)} mm`;
-  document.getElementById('specDpi').textContent   = `${s.dpi} dpi`;
-  document.getElementById('specOrient').textContent = orient.charAt(0).toUpperCase() + orient.slice(1);
-  const fitLabels = { height: 'Fit height', width: 'Fit width', addbleed: 'Add bleed' };
-  document.getElementById('specFit').textContent = fitLabels[s.fitMode] || s.fitMode;
+  document.getElementById('specTrim').textContent   = `${s.trimW} × ${s.trimH} mm`;
+  document.getElementById('specBleed').textContent  = `${+(s.trimW+2*s.bleedMm).toFixed(1)} × ${+(s.trimH+2*s.bleedMm).toFixed(1)} mm`;
+  document.getElementById('specDpi').textContent    = `${s.dpi} dpi`;
+  document.getElementById('specOrient').textContent = orient.charAt(0).toUpperCase()+orient.slice(1);
+  document.getElementById('specFit').textContent    = ({height:'Fit height',width:'Fit width',addbleed:'Add bleed'})[s.fitMode]||s.fitMode;
 }
 
 generateBtn.addEventListener('click', async () => {
   if (!loadedImage) return;
-  setStatus('Generating PDF…', '');
-  generateBtn.disabled = true;
-  spinner.style.display = 'block';
-  btnText.textContent = 'Generating…';
-  generateBtn.classList.add('generating');
-
-  await new Promise(r => setTimeout(r, 30));
-
+  setStatus('Generating PDF…','');
+  generateBtn.disabled=true; spinner.style.display='block'; btnIcon.style.display='none';
+  btnText.textContent='Generating…';
+  await new Promise(r=>setTimeout(r,30));
   try {
-    const s = getSettings();
-    const fullCanvas = document.createElement('canvas');
-    renderToCanvas(fullCanvas, s);
-
-    const imgData = fullCanvas.toDataURL('image/jpeg', 0.97);
-    const pdfW = +(s.trimW + 2 * s.bleedMm).toFixed(2);
-    const pdfH = +(s.trimH + 2 * s.bleedMm).toFixed(2);
-
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({
-      orientation: pdfH >= pdfW ? 'portrait' : 'landscape',
-      unit: 'mm',
-      format: [pdfW, pdfH],
-      compress: true,
-    });
-
-    const format = pageFormatEl.value === 'custom' ? 'custom' : pageFormatEl.value;
-    pdf.setProperties({ title: 'Print-Ready PDF', subject: `${format} + ${s.bleedMm}mm bleed` });
-    pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH, '', 'FAST');
+    const s=getSettings();
+    const fc=document.createElement('canvas'); renderToCanvas(fc,s);
+    const imgData=fc.toDataURL('image/jpeg',0.97);
+    const pdfW=+(s.trimW+2*s.bleedMm).toFixed(2), pdfH=+(s.trimH+2*s.bleedMm).toFixed(2);
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:pdfH>=pdfW?'portrait':'landscape',unit:'mm',format:[pdfW,pdfH],compress:true});
+    const format=pageFormatEl.value==='custom'?'custom':pageFormatEl.value;
+    pdf.setProperties({title:'Print-Ready PDF',subject:`${format} + ${s.bleedMm}mm bleed`});
+    pdf.addImage(imgData,'JPEG',0,0,pdfW,pdfH,'','FAST');
     pdf.save(`${originalFilename}_print_${format}_bleed${s.bleedMm}mm.pdf`);
-
-    setStatus(`✓ PDF saved — ${pdfW}×${pdfH}mm @ ${s.dpi}dpi`, 'ok');
-  } catch (err) {
-    setStatus('Error: ' + err.message, 'err');
-    console.error(err);
-  }
-
-  generateBtn.disabled = false;
-  spinner.style.display = 'none';
-  btnText.textContent = 'Generate Print PDF';
-  generateBtn.classList.remove('generating');
-  if (loadedImage) generateBtn.disabled = false;
+    setStatus(`✓ PDF saved — ${pdfW}×${pdfH}mm @ ${s.dpi}dpi`,'ok');
+  } catch(err) { setStatus('Error: '+err.message,'err'); console.error(err); }
+  generateBtn.disabled=false; spinner.style.display='none'; btnIcon.style.display='block';
+  btnText.textContent='Generate Print PDF';
+  if (loadedImage) generateBtn.disabled=false;
   updateSpecs();
 });
 
-function setStatus(msg, type) {
-  status.textContent = msg;
-  status.className = 'status' + (type ? ' ' + type : '');
+function setStatus(msg,type){
+  status.textContent=msg;
+  status.className='status'+(type?' '+type:'');
 }
 </script>
-
 </body>
 </html>
