@@ -97,4 +97,9 @@ Alternatively, **self-host jsPDF** — download it and put it in the repo alongs
 
 **Overall: the tool is inherently low-risk by design.** The two concrete improvements worth making are filename sanitisation (5 minutes) and self-hosting or SRI-hashing jsPDF (15 minutes).
 
-Want me to implement both?
+### Actually implemented security measures
+
+| Date | Security Measure |
+|------|------------------|
+| 12.04.2026 | Filenamesanitation and SRI-hashing implemented |
+
