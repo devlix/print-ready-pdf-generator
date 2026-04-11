@@ -425,6 +425,7 @@
             <input type="checkbox" id="lockRatio">
             <span>Lock aspect ratio <span class="hint" id="ratioHint"></span></span>
           </label>
+          <button class="bg-auto-btn" id="snapImageRatio" title="Snap to image aspect ratio" style="margin-top:0.4rem;display:none">⌗ From image</button>
         </div>
       </div>
     </div>
@@ -564,9 +565,19 @@ customH.addEventListener('input', () => {
 
 lockRatio.addEventListener('change', () => {
   if (lockRatio.checked) {
-    // Store current ratio at the moment of locking
     lockRatio._ratio = parseFloat(customH.value) / parseFloat(customW.value);
   }
+  document.getElementById('snapImageRatio').style.display = lockRatio.checked ? 'inline-block' : 'none';
+});
+
+// Snap to image aspect ratio
+document.getElementById('snapImageRatio').addEventListener('click', () => {
+  if (!loadedImage) return;
+  lockRatio._ratio = loadedImage.height / loadedImage.width;
+  // Update height to match image ratio, keeping current width
+  customH.value = +(parseFloat(customW.value) * lockRatio._ratio).toFixed(1);
+  updateRatioHint();
+  if (loadedImage) { renderPreview(); updateSpecs(); }
 });
 
 updateRatioHint();
