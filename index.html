@@ -1,365 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Print PDF Generator</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,300;8..144,400;8..144,500;8..144,700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --md-sys-color-primary:            #aac7ff;
-    --md-sys-color-on-primary:         #0a305f;
-    --md-sys-color-primary-container:  #284777;
-    --md-sys-color-on-primary-container: #d6e3ff;
-    --md-sys-color-secondary:          #bbc7db;
-    --md-sys-color-on-secondary:       #253140;
-    --md-sys-color-secondary-container:#3b4858;
-    --md-sys-color-on-secondary-container: #d7e3f7;
-    --md-sys-color-surface:            #111318;
-    --md-sys-color-surface-variant:    #44474f;
-    --md-sys-color-surface-container:  #1d2024;
-    --md-sys-color-surface-container-high: #272a2f;
-    --md-sys-color-surface-container-highest: #323539;
-    --md-sys-color-on-surface:         #e2e2e9;
-    --md-sys-color-on-surface-variant: #c4c6d0;
-    --md-sys-color-outline:            #8e9099;
-    --md-sys-color-outline-variant:    #44474f;
-    --md-sys-color-error:              #ffb4ab;
-    --md-sys-color-success:            #6dd58c;
-    --md-shape-corner-small:           8px;
-    --md-shape-corner-medium:          12px;
-    --md-shape-corner-large:           16px;
-    --md-shape-corner-full:            9999px;
-  }
-
-  body {
-    background: var(--md-sys-color-surface);
-    color: var(--md-sys-color-on-surface);
-    font-family: 'Roboto Flex', sans-serif;
-    font-weight: 400;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 2rem 1rem 4rem;
-  }
-
-  .wrapper { width: 100%; max-width: 600px; }
-
-  header { padding: 2rem 0 2rem; }
-
-  .eyebrow {
-    font-family: 'Roboto Mono', monospace;
-    font-size: 0.7rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--md-sys-color-primary);
-    margin-bottom: 0.5rem;
-  }
-
-  h1 {
-    font-size: 1.75rem;
-    font-weight: 300;
-    line-height: 1.2;
-    color: var(--md-sys-color-on-surface);
-    letter-spacing: -0.01em;
-  }
-
-  .subtitle {
-    margin-top: 0.5rem;
-    font-size: 0.875rem;
-    color: var(--md-sys-color-on-surface-variant);
-    line-height: 1.5;
-  }
-
-  .card {
-    background: var(--md-sys-color-surface-container);
-    border-radius: var(--md-shape-corner-large);
-    padding: 1.25rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .card-title {
-    font-family: 'Roboto Mono', monospace;
-    font-size: 0.65rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--md-sys-color-on-surface-variant);
-    margin-bottom: 1rem;
-  }
-
-  .dropzone {
-    border: 1.5px dashed var(--md-sys-color-outline);
-    border-radius: var(--md-shape-corner-medium);
-    padding: 2.5rem 1.5rem;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
-    position: relative;
-  }
-
-  .dropzone:hover, .dropzone.dragover {
-    border-color: var(--md-sys-color-primary);
-    background: rgba(170,199,255,0.05);
-  }
-
-  .dropzone input[type="file"] {
-    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
-  }
-
-  .drop-icon {
-    width: 36px; height: 36px; margin: 0 auto 0.875rem;
-    color: var(--md-sys-color-on-surface-variant);
-  }
-
-  .drop-primary { font-size: 0.9rem; font-weight: 500; color: var(--md-sys-color-on-surface); }
-  .drop-secondary { font-size: 0.78rem; color: var(--md-sys-color-on-surface-variant); margin-top: 0.25rem; }
-
-  .filename-chip {
-    display: none;
-    align-items: center;
-    gap: 0.4rem;
-    margin-top: 0.75rem;
-    padding: 0.3rem 0.75rem;
-    background: var(--md-sys-color-primary-container);
-    color: var(--md-sys-color-on-primary-container);
-    border-radius: var(--md-shape-corner-full);
-    font-size: 0.8rem;
-    font-weight: 500;
-    width: fit-content;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .settings-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-  }
-  .settings-grid .full-width { grid-column: 1 / -1; }
-
-  .md-field { display: flex; flex-direction: column; gap: 0.375rem; }
-
-  .md-field-label {
-    font-size: 0.72rem; font-weight: 500;
-    color: var(--md-sys-color-on-surface-variant); letter-spacing: 0.03em;
-  }
-
-  .md-field select,
-  .md-field input[type="number"] {
-    background: var(--md-sys-color-surface-container-high);
-    border: 1px solid var(--md-sys-color-outline);
-    border-radius: var(--md-shape-corner-small);
-    padding: 0.65rem 0.875rem;
-    font-family: 'Roboto Flex', sans-serif;
-    font-size: 0.9rem;
-    color: var(--md-sys-color-on-surface);
-    appearance: none; outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    width: 100%;
-  }
-
-  .md-field select:focus,
-  .md-field input[type="number"]:focus {
-    border-color: var(--md-sys-color-primary);
-    box-shadow: 0 0 0 2px rgba(170,199,255,0.15);
-  }
-
-  .md-field select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23c4c6d0'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.875rem center;
-    padding-right: 2.25rem;
-  }
-
-  .custom-format {
-    display: none;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-    grid-column: 1 / -1;
-    padding: 0.875rem;
-    background: var(--md-sys-color-surface-container-highest);
-    border-radius: var(--md-shape-corner-small);
-    border-left: 3px solid var(--md-sys-color-primary);
-  }
-  .custom-format.visible { display: grid; }
-
-  /* Background color picker — shown when addbleed is selected */
-  .bg-color-row {
-    display: none;
-    align-items: center;
-    gap: 0.75rem;
-    margin-top: 0.75rem;
-    padding: 0.75rem;
-    background: var(--md-sys-color-surface-container-highest);
-    border-radius: var(--md-shape-corner-small);
-    border-left: 3px solid var(--md-sys-color-primary);
-  }
-  .bg-color-row.visible { display: flex; }
-
-  .bg-color-row label {
-    font-size: 0.78rem;
-    color: var(--md-sys-color-on-surface-variant);
-    flex: 1;
-  }
-
-  .bg-color-row input[type="color"] {
-    width: 40px; height: 32px;
-    border: 1px solid var(--md-sys-color-outline);
-    border-radius: var(--md-shape-corner-small);
-    background: none;
-    cursor: pointer;
-    padding: 2px;
-  }
-
-  .bg-auto-btn {
-    font-size: 0.72rem;
-    font-weight: 500;
-    color: var(--md-sys-color-primary);
-    background: none;
-    border: 1px solid var(--md-sys-color-primary);
-    border-radius: var(--md-shape-corner-full);
-    padding: 0.3rem 0.6rem;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.15s;
-  }
-  .bg-auto-btn:hover { background: rgba(170,199,255,0.1); }
-
-  .seg-label {
-    font-size: 0.72rem; font-weight: 500;
-    color: var(--md-sys-color-on-surface-variant);
-    margin-bottom: 0.375rem; letter-spacing: 0.03em;
-  }
-
-  .seg-btn {
-    display: flex;
-    border: 1px solid var(--md-sys-color-outline);
-    border-radius: var(--md-shape-corner-full);
-    overflow: hidden;
-  }
-
-  .seg-btn input[type="radio"] { display: none; }
-
-  .seg-btn label {
-    flex: 1;
-    display: flex; align-items: center; justify-content: center; gap: 0.35rem;
-    padding: 0.55rem 0.5rem;
-    font-size: 0.78rem; font-weight: 500;
-    color: var(--md-sys-color-on-surface);
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-    border-right: 1px solid var(--md-sys-color-outline);
-    text-align: center; line-height: 1.2;
-  }
-  .seg-btn label:last-of-type { border-right: none; }
-  .seg-btn input[type="radio"]:checked + label {
-    background: var(--md-sys-color-secondary-container);
-    color: var(--md-sys-color-on-secondary-container);
-  }
-
-  .md-checkbox {
-    display: flex; align-items: center; gap: 0.75rem;
-    cursor: pointer; padding: 0.5rem 0.375rem;
-    border-radius: var(--md-shape-corner-small);
-    transition: background 0.15s;
-  }
-  .md-checkbox:hover { background: rgba(255,255,255,0.04); }
-  .md-checkbox input[type="checkbox"] {
-    width: 18px; height: 18px;
-    accent-color: var(--md-sys-color-primary);
-    cursor: pointer; flex-shrink: 0;
-  }
-  .md-checkbox span { font-size: 0.875rem; color: var(--md-sys-color-on-surface); line-height: 1.3; }
-  .md-checkbox .hint { font-size: 0.72rem; color: var(--md-sys-color-on-surface-variant); }
-
-  .preview-area { display: none; margin-bottom: 0.75rem; }
-  .preview-area.visible { display: block; }
-
-  .preview-canvas-wrap {
-    background: #1a1a1a;
-    padding: 1.25rem;
-    display: flex; justify-content: center;
-    border-radius: var(--md-shape-corner-medium);
-  }
-
-  #previewCanvas {
-    max-width: 100%; max-height: 300px;
-    border-radius: 2px;
-    box-shadow: 0 4px 32px rgba(0,0,0,0.6);
-  }
-
-  .btn-generate {
-    width: 100%;
-    padding: 1rem 1.5rem;
-    background: var(--md-sys-color-primary);
-    color: var(--md-sys-color-on-primary);
-    border: none;
-    border-radius: var(--md-shape-corner-large);
-    font-family: 'Roboto Flex', sans-serif;
-    font-size: 0.95rem; font-weight: 600;
-    letter-spacing: 0.01em;
-    cursor: pointer;
-    transition: box-shadow 0.2s, filter 0.2s;
-    display: flex; align-items: center; justify-content: center; gap: 0.625rem;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.4);
-    margin-bottom: 0.75rem;
-  }
-  .btn-generate:hover:not(:disabled) {
-    filter: brightness(1.08);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.5);
-  }
-  .btn-generate:disabled {
-    background: rgba(226,226,233,0.12);
-    color: rgba(226,226,233,0.38);
-    box-shadow: none; cursor: not-allowed;
-  }
-
-  .status {
-    text-align: center; font-size: 0.8rem;
-    color: var(--md-sys-color-on-surface-variant);
-    min-height: 1.2em; padding: 0.25rem 0;
-    margin-bottom: 0.75rem;
-    transition: color 0.2s;
-  }
-  .status.ok  { color: var(--md-sys-color-success); }
-  .status.err { color: var(--md-sys-color-error); }
-
-  .specs {
-    display: none; flex-wrap: wrap; gap: 0.5rem;
-    padding: 1rem 1.25rem;
-    background: var(--md-sys-color-surface-container);
-    border-radius: var(--md-shape-corner-large);
-  }
-  .specs.visible { display: flex; }
-
-  .spec-chip {
-    display: flex; flex-direction: column; gap: 0.1rem;
-    padding: 0.4rem 0.75rem;
-    background: var(--md-sys-color-surface-container-high);
-    border-radius: var(--md-shape-corner-full);
-  }
-  .spec-key {
-    font-family: 'Roboto Mono', monospace;
-    font-size: 0.58rem; letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--md-sys-color-on-surface-variant);
-  }
-  .spec-val { font-size: 0.82rem; font-weight: 500; color: var(--md-sys-color-on-surface); }
-
-  .spinner {
-    width: 18px; height: 18px;
-    border: 2px solid rgba(10,48,95,0.4);
-    border-top-color: var(--md-sys-color-on-primary);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    display: none; flex-shrink: 0;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Print PDF Generator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,300;8..144,400;8..144,500;8..144,700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="wrapper">
@@ -370,6 +17,7 @@
     <p class="subtitle">Generates PDF with bleed and crop marks, ready for the press.</p>
   </header>
 
+  <!-- Source image -->
   <div class="card">
     <div class="card-title">Source image</div>
     <div class="dropzone" id="dropzone">
@@ -382,12 +30,15 @@
       <div class="drop-primary">Drop image here or click to browse</div>
       <div class="drop-secondary">JPG · PNG · TIFF · WebP</div>
       <div class="filename-chip" id="filenameChip">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM6 20V4h5v7h7v9H6z"/></svg>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM6 20V4h5v7h7v9H6z"/>
+        </svg>
         <span id="filenameLabel">—</span>
       </div>
     </div>
   </div>
 
+  <!-- Page -->
   <div class="card">
     <div class="card-title">Page</div>
     <div class="settings-grid">
@@ -431,6 +82,7 @@
     </div>
   </div>
 
+  <!-- Bleed & Image -->
   <div class="card">
     <div class="card-title">Bleed &amp; Image</div>
     <div class="settings-grid">
@@ -465,6 +117,7 @@
     </div>
   </div>
 
+  <!-- Print guides -->
   <div class="card">
     <div class="card-title">Print guides</div>
     <label class="md-checkbox">
@@ -477,6 +130,7 @@
     </label>
   </div>
 
+  <!-- Preview -->
   <div class="preview-area" id="previewArea">
     <div class="card">
       <div class="card-title">Preview</div>
@@ -486,14 +140,18 @@
     </div>
   </div>
 
+  <!-- Generate -->
   <button class="btn-generate" id="generateBtn" disabled>
     <div class="spinner" id="spinner"></div>
-    <svg id="btnIcon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 8v2h14v-2H5z"/></svg>
+    <svg id="btnIcon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 8v2h14v-2H5z"/>
+    </svg>
     <span id="btnText">Generate Print PDF</span>
   </button>
 
   <div class="status" id="status">Upload an image to begin</div>
 
+  <!-- Specs -->
   <div class="specs" id="specs">
     <div class="spec-chip"><div class="spec-key">Trim</div><div class="spec-val" id="specTrim">—</div></div>
     <div class="spec-chip"><div class="spec-key">With bleed</div><div class="spec-val" id="specBleed">—</div></div>
@@ -503,306 +161,6 @@
   </div>
 
 </div>
-<script>
-const PAGE_SIZES = {
-  A3: [297,420], A4: [210,297], A5: [148,210], A6: [105,148], Letter: [216,279]
-};
-
-let loadedImage = null;
-let originalFilename = 'image';
-
-const dropzone      = document.getElementById('dropzone');
-const fileInput     = document.getElementById('fileInput');
-const generateBtn   = document.getElementById('generateBtn');
-const previewArea   = document.getElementById('previewArea');
-const previewCanvas = document.getElementById('previewCanvas');
-const status        = document.getElementById('status');
-const spinner       = document.getElementById('spinner');
-const btnText       = document.getElementById('btnText');
-const btnIcon       = document.getElementById('btnIcon');
-const specs         = document.getElementById('specs');
-const customFormatEl = document.getElementById('customFormat');
-const pageFormatEl  = document.getElementById('pageFormat');
-const filenameChip  = document.getElementById('filenameChip');
-const filenameLabel = document.getElementById('filenameLabel');
-
-pageFormatEl.addEventListener('change', () => {
-  customFormatEl.classList.toggle('visible', pageFormatEl.value === 'custom');
-  if (loadedImage) { renderPreview(); updateSpecs(); }
-});
-
-// Lock aspect ratio for custom format
-const customW   = document.getElementById('customW');
-const customH   = document.getElementById('customH');
-const lockRatio = document.getElementById('lockRatio');
-const ratioHint = document.getElementById('ratioHint');
-
-function updateRatioHint() {
-  const w = parseFloat(customW.value), h = parseFloat(customH.value);
-  if (w && h) {
-    const gcd = (a, b) => b < 0.01 ? a : gcd(b, a % b);
-    const d = gcd(w, h);
-    ratioHint.textContent = `(${+(w/d).toFixed(2)} : ${+(h/d).toFixed(2)})`;
-  }
-}
-
-customW.addEventListener('input', () => {
-  if (lockRatio.checked) {
-    customH.value = +(parseFloat(customW.value) * lockRatio._ratio).toFixed(1);
-  }
-  customW.defaultValue = customW.value;
-  updateRatioHint();
-  if (loadedImage) { renderPreview(); updateSpecs(); }
-});
-
-customH.addEventListener('input', () => {
-  if (lockRatio.checked) {
-    customW.value = +(parseFloat(customH.value) / lockRatio._ratio).toFixed(1);
-  }
-  updateRatioHint();
-  if (loadedImage) { renderPreview(); updateSpecs(); }
-});
-
-lockRatio.addEventListener('change', () => {
-  if (lockRatio.checked) {
-    lockRatio._ratio = parseFloat(customH.value) / parseFloat(customW.value);
-  }
-  document.getElementById('snapImageRatio').style.display = lockRatio.checked ? 'inline-block' : 'none';
-});
-
-// Snap to image aspect ratio
-document.getElementById('snapImageRatio').addEventListener('click', () => {
-  if (!loadedImage) return;
-  lockRatio._ratio = loadedImage.height / loadedImage.width;
-  // Update height to match image ratio, keeping current width
-  customH.value = +(parseFloat(customW.value) * lockRatio._ratio).toFixed(1);
-  updateRatioHint();
-  if (loadedImage) { renderPreview(); updateSpecs(); }
-});
-
-updateRatioHint();
-
-dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
-dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-dropzone.addEventListener('drop', e => {
-  e.preventDefault(); dropzone.classList.remove('dragover');
-  const file = e.dataTransfer.files[0]; if (file) loadFile(file);
-});
-fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
-
-['pageFormat','bleedMm','dpi','showCropMarks','showBleedBox','customW','customH'].forEach(id => {
-  document.getElementById(id).addEventListener('change', () => { if (loadedImage) { renderPreview(); updateSpecs(); } });
-});
-document.querySelectorAll('input[name="orientation"], input[name="fitMode"]').forEach(el => {
-  el.addEventListener('change', () => {
-    const isAddBleed = document.querySelector('input[name="fitMode"]:checked').value === 'addbleed';
-    document.getElementById('bgColorRow').classList.toggle('visible', isAddBleed);
-    if (loadedImage) { renderPreview(); updateSpecs(); }
-  });
-});
-
-// Auto button: sample background color from image corners
-document.getElementById('bgAutoBtn').addEventListener('click', () => {
-  if (!loadedImage) return;
-  const sampled = sampleBackgroundColor(loadedImage);
-  // Convert rgb(...) to hex for the color input
-  const m = sampled.match(/\d+/g);
-  const hex = '#' + m.map(v => parseInt(v).toString(16).padStart(2,'0')).join('');
-  document.getElementById('bgColor').value = hex;
-  if (loadedImage) { renderPreview(); updateSpecs(); }
-});
-
-document.getElementById('bgColor').addEventListener('input', () => {
-  if (loadedImage) { renderPreview(); updateSpecs(); }
-});
-
-function loadFile(file) {
-  if (!file.type.startsWith('image/')) { setStatus('Please upload an image file.', 'err'); return; }
-  originalFilename = file.name.replace(/\.[^/.]+$/, '');
-  filenameLabel.textContent = file.name;
-  filenameChip.style.display = 'inline-flex';
-  const reader = new FileReader();
-  reader.onload = e => {
-    const img = new Image();
-    img.onload = () => {
-      loadedImage = img;
-      generateBtn.disabled = false;
-      setStatus('Image loaded — preview ready', '');
-      renderPreview(); updateSpecs();
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-
-function getTrimDimensions() {
-  const format = pageFormatEl.value;
-  let w, h;
-  if (format === 'custom') {
-    w = parseFloat(document.getElementById('customW').value) || 148;
-    h = parseFloat(document.getElementById('customH').value) || 210;
-  } else { [w, h] = PAGE_SIZES[format]; }
-  const landscape = document.querySelector('input[name="orientation"]:checked').value === 'landscape';
-  return landscape ? [Math.max(w,h), Math.min(w,h)] : [Math.min(w,h), Math.max(w,h)];
-}
-
-function getSettings() {
-  const [trimW, trimH] = getTrimDimensions();
-  const bleedVal = document.getElementById('bleedMm').value;
-  const bleedMm  = bleedVal === '' ? 3 : Math.max(0, parseFloat(bleedVal));
-  const dpi      = parseInt(document.getElementById('dpi').value);
-  const showCropMarks = document.getElementById('showCropMarks').checked;
-  const showBleedBox  = document.getElementById('showBleedBox').checked;
-  const fitMode  = document.querySelector('input[name="fitMode"]:checked').value;
-  const bgColor  = document.getElementById('bgColor').value;
-  const MM = dpi / 25.4;
-  const trimWpx = Math.round(trimW * MM), trimHpx = Math.round(trimH * MM);
-  const bleedPx = Math.round(bleedMm * MM);
-  const totalW  = trimWpx + 2 * bleedPx, totalH = trimHpx + 2 * bleedPx;
-  return { trimW, trimH, bleedMm, dpi, showCropMarks, showBleedBox, fitMode, bgColor,
-           MM, trimWpx, trimHpx, bleedPx, totalW, totalH };
-}
-
-function sampleBackgroundColor(img) {
-  const size = 10, tmp = document.createElement('canvas');
-  tmp.width = img.width; tmp.height = img.height;
-  const ctx = tmp.getContext('2d'); ctx.drawImage(img, 0, 0);
-  const regions = [
-    ctx.getImageData(0,0,size,size),
-    ctx.getImageData(img.width-size,0,size,size),
-    ctx.getImageData(0,img.height-size,size,size),
-    ctx.getImageData(img.width-size,img.height-size,size,size),
-  ];
-  let r=0,g=0,b=0,count=0;
-  regions.forEach(d => {
-    for (let i=0;i<d.data.length;i+=4){r+=d.data[i];g+=d.data[i+1];b+=d.data[i+2];count++;}
-  });
-  return `rgb(${Math.round(r/count)},${Math.round(g/count)},${Math.round(b/count)})`;
-}
-
-function renderToCanvas(canvas, s) {
-  canvas.width = s.totalW; canvas.height = s.totalH;
-  const ctx = canvas.getContext('2d');
-  const img = loadedImage;
-  let scaledW, scaledH, xOff, yOff;
-
-  if (s.fitMode === 'addbleed') {
-    ctx.fillStyle = s.bgColor;
-    ctx.fillRect(0,0,s.totalW,s.totalH);
-    const scale = Math.min(s.trimWpx/img.width, s.trimHpx/img.height);
-    scaledW = img.width*scale; scaledH = img.height*scale;
-    xOff = s.bleedPx+(s.trimWpx-scaledW)/2; yOff = s.bleedPx+(s.trimHpx-scaledH)/2;
-  } else {
-    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,s.totalW,s.totalH);
-    if (s.fitMode==='width') {
-      const scale=s.totalW/img.width; scaledW=s.totalW; scaledH=img.height*scale;
-      xOff=0; yOff=(s.totalH-scaledH)/2;
-    } else {
-      const scale=s.totalH/img.height; scaledW=img.width*scale; scaledH=s.totalH;
-      xOff=(s.totalW-scaledW)/2; yOff=0;
-    }
-  }
-  ctx.drawImage(img, xOff, yOff, scaledW, scaledH);
-
-  if (s.showBleedBox) {
-    ctx.save();
-    const lw = Math.max(1, Math.round(0.25 * s.MM));
-    const dash = [Math.round(3*s.MM), Math.round(2*s.MM)];
-    // White halo first
-    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-    ctx.lineWidth   = lw * 3;
-    ctx.setLineDash(dash);
-    ctx.strokeRect(s.bleedPx, s.bleedPx, s.trimWpx, s.trimHpx);
-    // Red dashes on top
-    ctx.strokeStyle = 'rgba(200,68,10,0.9)';
-    ctx.lineWidth   = lw;
-    ctx.strokeRect(s.bleedPx, s.bleedPx, s.trimWpx, s.trimHpx);
-    ctx.restore();
-  }
-
-  if (s.showCropMarks) {
-    ctx.save();
-    const lw = Math.max(1, Math.round(0.25 * s.MM));
-    const {bleedPx:b, trimWpx:tw, trimHpx:th, MM} = s;
-    const gapPx = Math.round(0.5 * MM);
-    const corners = [
-      {x:b,    y:b,    dx:-1, dy:-1},
-      {x:b+tw, y:b,    dx: 1, dy:-1},
-      {x:b,    y:b+th, dx:-1, dy: 1},
-      {x:b+tw, y:b+th, dx: 1, dy: 1},
-    ];
-
-    const drawMark = (x1, y1, x2, y2) => {
-      // White halo
-      ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-      ctx.lineWidth   = lw * 3;
-      ctx.setLineDash([]);
-      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-      // Black mark on top
-      ctx.strokeStyle = '#000000';
-      ctx.lineWidth   = lw;
-      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-    };
-
-    corners.forEach(({x, y, dx, dy}) => {
-      drawMark(x + dx*gapPx, y, x + dx*b, y);
-      drawMark(x, y + dy*gapPx, x, y + dy*b);
-    });
-    ctx.restore();
-  }
-}
-
-function renderPreview() {
-  const s = getSettings();
-  previewArea.classList.add('visible');
-  const tmp = document.createElement('canvas');
-  renderToCanvas(tmp, s);
-  const scale = 560 / s.totalH;
-  previewCanvas.width  = Math.round(s.totalW * scale);
-  previewCanvas.height = Math.round(s.totalH * scale);
-  previewCanvas.getContext('2d').drawImage(tmp, 0, 0, previewCanvas.width, previewCanvas.height);
-}
-
-function updateSpecs() {
-  const s = getSettings();
-  specs.classList.add('visible');
-  const orient = document.querySelector('input[name="orientation"]:checked').value;
-  document.getElementById('specTrim').textContent   = `${s.trimW} × ${s.trimH} mm`;
-  document.getElementById('specBleed').textContent  = `${+(s.trimW+2*s.bleedMm).toFixed(1)} × ${+(s.trimH+2*s.bleedMm).toFixed(1)} mm`;
-  document.getElementById('specDpi').textContent    = `${s.dpi} dpi`;
-  document.getElementById('specOrient').textContent = orient.charAt(0).toUpperCase()+orient.slice(1);
-  document.getElementById('specFit').textContent    = ({height:'Fit height',width:'Fit width',addbleed:'Add bleed'})[s.fitMode]||s.fitMode;
-}
-
-generateBtn.addEventListener('click', async () => {
-  if (!loadedImage) return;
-  setStatus('Generating PDF…','');
-  generateBtn.disabled=true; spinner.style.display='block'; btnIcon.style.display='none';
-  btnText.textContent='Generating…';
-  await new Promise(r=>setTimeout(r,30));
-  try {
-    const s=getSettings();
-    const fc=document.createElement('canvas'); renderToCanvas(fc,s);
-    const imgData=fc.toDataURL('image/jpeg',0.97);
-    const pdfW=+(s.trimW+2*s.bleedMm).toFixed(2), pdfH=+(s.trimH+2*s.bleedMm).toFixed(2);
-    const {jsPDF}=window.jspdf;
-    const pdf=new jsPDF({orientation:pdfH>=pdfW?'portrait':'landscape',unit:'mm',format:[pdfW,pdfH],compress:true});
-    const format=pageFormatEl.value==='custom'?'custom':pageFormatEl.value;
-    pdf.setProperties({title:'Print-Ready PDF',subject:`${format} + ${s.bleedMm}mm bleed`});
-    pdf.addImage(imgData,'JPEG',0,0,pdfW,pdfH,'','FAST');
-    pdf.save(`${originalFilename}_print_${format}_bleed${s.bleedMm}mm.pdf`);
-    setStatus(`✓ PDF saved — ${pdfW}×${pdfH}mm @ ${s.dpi}dpi`,'ok');
-  } catch(err) { setStatus('Error: '+err.message,'err'); console.error(err); }
-  generateBtn.disabled=false; spinner.style.display='none'; btnIcon.style.display='block';
-  btnText.textContent='Generate Print PDF';
-  if (loadedImage) generateBtn.disabled=false;
-  updateSpecs();
-});
-
-function setStatus(msg,type){
-  status.textContent=msg;
-  status.className='status'+(type?' '+type:'');
-}
-</script>
+<script src="script.js"></script>
 </body>
 </html>
