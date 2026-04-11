@@ -122,7 +122,7 @@ document.getElementById('bgColor').addEventListener('input', () => {
 // ── Load file ──
 function loadFile(file) {
   if (!file.type.startsWith('image/')) { setStatus('Please upload an image file.', 'err'); return; }
-  originalFilename = file.name.replace(/\.[^/.]+$/, '');
+  originalFilename = file.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_\-\s]/g, '_');
   filenameLabel.textContent = file.name;
   filenameChip.style.display = 'inline-flex';
   const reader = new FileReader();
