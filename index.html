@@ -720,8 +720,14 @@ function renderToCanvas(canvas, s) {
     ctx.setLineDash([]);
     const {bleedPx:b,trimWpx:tw,trimHpx:th,MM}=s;
     const gapPx=Math.round(0.5*MM);
-    [{x:b,y:b},{x:b+tw,y:b},{x:b,y:b+th},{x:b+tw,y:b+th}].forEach(({x,y})=>{
-      const dx=x===b?-1:1, dy=y===b?-1:1;
+    // corners: [top-left, top-right, bottom-left, bottom-right]
+    // dx/dy derived from position, not x===b comparison (avoids float precision issues)
+    [
+      {x:b,      y:b,      dx:-1, dy:-1},
+      {x:b+tw,   y:b,      dx: 1, dy:-1},
+      {x:b,      y:b+th,   dx:-1, dy: 1},
+      {x:b+tw,   y:b+th,   dx: 1, dy: 1},
+    ].forEach(({x,y,dx,dy})=>{
       ctx.beginPath();ctx.moveTo(x+dx*gapPx,y);ctx.lineTo(x+dx*b,y);ctx.stroke();
       ctx.beginPath();ctx.moveTo(x,y+dy*gapPx);ctx.lineTo(x,y+dy*b);ctx.stroke();
     });
