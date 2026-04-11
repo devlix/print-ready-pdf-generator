@@ -706,30 +706,47 @@ function renderToCanvas(canvas, s) {
 
   if (s.showBleedBox) {
     ctx.save();
-    ctx.strokeStyle='rgba(200,68,10,0.6)';
-    ctx.lineWidth=Math.max(1,Math.round(0.25*s.MM));
-    ctx.setLineDash([Math.round(3*s.MM),Math.round(2*s.MM)]);
-    ctx.strokeRect(s.bleedPx,s.bleedPx,s.trimWpx,s.trimHpx);
+    const lw = Math.max(1, Math.round(0.25 * s.MM));
+    const dash = [Math.round(3*s.MM), Math.round(2*s.MM)];
+    // White halo first
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctx.lineWidth   = lw * 3;
+    ctx.setLineDash(dash);
+    ctx.strokeRect(s.bleedPx, s.bleedPx, s.trimWpx, s.trimHpx);
+    // Red dashes on top
+    ctx.strokeStyle = 'rgba(200,68,10,0.9)';
+    ctx.lineWidth   = lw;
+    ctx.strokeRect(s.bleedPx, s.bleedPx, s.trimWpx, s.trimHpx);
     ctx.restore();
   }
 
   if (s.showCropMarks) {
     ctx.save();
-    ctx.strokeStyle='#000000';
-    ctx.lineWidth=Math.max(1,Math.round(0.25*s.MM));
-    ctx.setLineDash([]);
-    const {bleedPx:b,trimWpx:tw,trimHpx:th,MM}=s;
-    const gapPx=Math.round(0.5*MM);
-    // corners: [top-left, top-right, bottom-left, bottom-right]
-    // dx/dy derived from position, not x===b comparison (avoids float precision issues)
-    [
-      {x:b,      y:b,      dx:-1, dy:-1},
-      {x:b+tw,   y:b,      dx: 1, dy:-1},
-      {x:b,      y:b+th,   dx:-1, dy: 1},
-      {x:b+tw,   y:b+th,   dx: 1, dy: 1},
-    ].forEach(({x,y,dx,dy})=>{
-      ctx.beginPath();ctx.moveTo(x+dx*gapPx,y);ctx.lineTo(x+dx*b,y);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(x,y+dy*gapPx);ctx.lineTo(x,y+dy*b);ctx.stroke();
+    const lw = Math.max(1, Math.round(0.25 * s.MM));
+    const {bleedPx:b, trimWpx:tw, trimHpx:th, MM} = s;
+    const gapPx = Math.round(0.5 * MM);
+    const corners = [
+      {x:b,    y:b,    dx:-1, dy:-1},
+      {x:b+tw, y:b,    dx: 1, dy:-1},
+      {x:b,    y:b+th, dx:-1, dy: 1},
+      {x:b+tw, y:b+th, dx: 1, dy: 1},
+    ];
+
+    const drawMark = (x1, y1, x2, y2) => {
+      // White halo
+      ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+      ctx.lineWidth   = lw * 3;
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      // Black mark on top
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth   = lw;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    };
+
+    corners.forEach(({x, y, dx, dy}) => {
+      drawMark(x + dx*gapPx, y, x + dx*b, y);
+      drawMark(x, y + dy*gapPx, x, y + dy*b);
     });
     ctx.restore();
   }
