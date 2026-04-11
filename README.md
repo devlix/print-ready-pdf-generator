@@ -2,7 +2,7 @@
 
 A browser-based tool for converting images to print-ready PDFs with bleed and crop marks. No installation required — runs entirely in the browser.
 
-**[Open the tool →](https://YOUR_USERNAME.github.io/YOUR_REPO_NAME/)**
+**[Open the tool →](https://devlix.github.io/print-ready-pdf-generator/)**
 
 ---
 
