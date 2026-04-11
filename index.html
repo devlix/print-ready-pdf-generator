@@ -420,6 +420,12 @@
           <div class="md-field-label">Height (mm)</div>
           <input type="number" id="customH" value="210" min="10" max="1200" step="0.5">
         </div>
+        <div style="grid-column:1/-1">
+          <label class="md-checkbox">
+            <input type="checkbox" id="lockRatio">
+            <span>Lock aspect ratio <span class="hint" id="ratioHint"></span></span>
+          </label>
+        </div>
       </div>
     </div>
   </div>
@@ -523,6 +529,47 @@ pageFormatEl.addEventListener('change', () => {
   customFormatEl.classList.toggle('visible', pageFormatEl.value === 'custom');
   if (loadedImage) { renderPreview(); updateSpecs(); }
 });
+
+// Lock aspect ratio for custom format
+const customW   = document.getElementById('customW');
+const customH   = document.getElementById('customH');
+const lockRatio = document.getElementById('lockRatio');
+const ratioHint = document.getElementById('ratioHint');
+
+function updateRatioHint() {
+  const w = parseFloat(customW.value), h = parseFloat(customH.value);
+  if (w && h) {
+    const gcd = (a, b) => b < 0.01 ? a : gcd(b, a % b);
+    const d = gcd(w, h);
+    ratioHint.textContent = `(${+(w/d).toFixed(2)} : ${+(h/d).toFixed(2)})`;
+  }
+}
+
+customW.addEventListener('input', () => {
+  if (lockRatio.checked) {
+    customH.value = +(parseFloat(customW.value) * lockRatio._ratio).toFixed(1);
+  }
+  customW.defaultValue = customW.value;
+  updateRatioHint();
+  if (loadedImage) { renderPreview(); updateSpecs(); }
+});
+
+customH.addEventListener('input', () => {
+  if (lockRatio.checked) {
+    customW.value = +(parseFloat(customH.value) / lockRatio._ratio).toFixed(1);
+  }
+  updateRatioHint();
+  if (loadedImage) { renderPreview(); updateSpecs(); }
+});
+
+lockRatio.addEventListener('change', () => {
+  if (lockRatio.checked) {
+    // Store current ratio at the moment of locking
+    lockRatio._ratio = parseFloat(customH.value) / parseFloat(customW.value);
+  }
+});
+
+updateRatioHint();
 
 dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
 dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
