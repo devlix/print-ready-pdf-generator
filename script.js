@@ -20,8 +20,9 @@ let originalFilename = 'image';
 const dropzone       = document.getElementById('dropzone');
 const fileInput      = document.getElementById('fileInput');
 const generateBtn    = document.getElementById('generateBtn');
-const previewArea    = document.getElementById('previewArea');
 const previewCanvas  = document.getElementById('previewCanvas');
+const dropEmpty      = document.getElementById('dropEmpty');
+const dropHasImage   = document.getElementById('dropHasImage');
 const status         = document.getElementById('status');
 const spinner        = document.getElementById('spinner');
 const btnText        = document.getElementById('btnText');
@@ -29,7 +30,6 @@ const btnIcon        = document.getElementById('btnIcon');
 const specs          = document.getElementById('specs');
 const customFormatEl = document.getElementById('customFormat');
 const pageFormatEl   = document.getElementById('pageFormat');
-const filenameChip   = document.getElementById('filenameChip');
 const filenameLabel  = document.getElementById('filenameLabel');
 const customW        = document.getElementById('customW');
 const customH        = document.getElementById('customH');
@@ -127,15 +127,17 @@ document.getElementById('bgColor').addEventListener('input', () => {
 // ── Load file ──
 function loadFile(file) {
   if (!file.type.startsWith('image/')) { setStatus('Please upload an image file.', 'err'); return; }
-  originalFilename = file.name.replace(/\.[^/.]+$/, '');
+  originalFilename = file.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_\-\s]/g, '_');
   filenameLabel.textContent = file.name;
-  filenameChip.style.display = 'inline-flex';
   const reader = new FileReader();
   reader.onload = e => {
     const img = new Image();
     img.onload = () => {
       loadedImage = img;
       generateBtn.disabled = false;
+      // Switch drop zone to preview state
+      dropEmpty.style.display    = 'none';
+      dropHasImage.style.display = 'block';
       setStatus('Image loaded — preview ready', '');
       renderPreview(); updateSpecs();
     };
@@ -279,12 +281,15 @@ function renderToCanvas(canvas, s) {
 // ── Render preview ──
 function renderPreview() {
   const s   = getSettings();
-  previewArea.classList.add('visible');
   const tmp = document.createElement('canvas');
   renderToCanvas(tmp, s);
-  const scale           = 560 / s.totalH;
-  previewCanvas.width   = Math.round(s.totalW * scale);
-  previewCanvas.height  = Math.round(s.totalH * scale);
+  // Draw into the drop-zone canvas, scaled to fill it
+  const container = dropHasImage;
+  const cw = container.clientWidth  || 400;
+  const ch = container.clientHeight || 500;
+  const scale = Math.min(cw / s.totalW, ch / s.totalH);
+  previewCanvas.width  = Math.round(s.totalW * scale);
+  previewCanvas.height = Math.round(s.totalH * scale);
   previewCanvas.getContext('2d').drawImage(tmp, 0, 0, previewCanvas.width, previewCanvas.height);
 }
 

@@ -33,16 +33,37 @@ body {
   font-family: 'Roboto Flex', sans-serif;
   font-weight: 400;
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 2rem 1rem 4rem;
+  padding: 1.5rem;
 }
 
-.wrapper { width: 100%; max-width: 600px; }
+/* ── Two-column layout ── */
+.app-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+/* Left column: sticky so it stays in view while right side scrolls */
+.col-left {
+  position: sticky;
+  top: 1.5rem;
+}
+
+.col-right {
+  min-width: 0;
+}
+
+/* Mobile: single column */
+@media (max-width: 720px) {
+  .app-layout { grid-template-columns: 1fr; }
+  .col-left { position: static; }
+}
 
 /* ── Header ── */
-header { padding: 2rem 0 2rem; }
+header { padding-bottom: 1rem; }
 
 .eyebrow {
   font-family: 'Roboto Mono', monospace;
@@ -50,22 +71,92 @@ header { padding: 2rem 0 2rem; }
   letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--md-sys-color-primary);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
 }
 
 h1 {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 300;
   line-height: 1.2;
   color: var(--md-sys-color-on-surface);
   letter-spacing: -0.01em;
 }
 
-.subtitle {
-  margin-top: 0.5rem;
-  font-size: 0.875rem;
+/* ── Drop / Preview zone ── */
+.drop-preview-zone {
+  position: relative;
+  border: 1.5px dashed var(--md-sys-color-outline);
+  border-radius: var(--md-shape-corner-large);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  background: var(--md-sys-color-surface-container);
+  /* Fixed aspect ratio — roughly A5 portrait */
+  aspect-ratio: 3 / 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.drop-preview-zone:hover,
+.drop-preview-zone.dragover {
+  border-color: var(--md-sys-color-primary);
+  background: rgba(170,199,255,0.04);
+}
+
+.drop-preview-zone input[type="file"] {
+  position: absolute; inset: 0;
+  opacity: 0; cursor: pointer;
+  width: 100%; height: 100%;
+  z-index: 2;
+}
+
+/* Empty state */
+.drop-empty {
+  text-align: center;
+  padding: 2rem;
+  pointer-events: none;
+}
+
+.drop-icon {
+  width: 40px; height: 40px;
+  margin: 0 auto 1rem;
   color: var(--md-sys-color-on-surface-variant);
-  line-height: 1.5;
+  opacity: 0.5;
+}
+
+.drop-primary  { font-size: 0.9rem; font-weight: 500; color: var(--md-sys-color-on-surface); }
+.drop-secondary { font-size: 0.78rem; color: var(--md-sys-color-on-surface-variant); margin-top: 0.25rem; }
+
+/* Has-image state */
+.drop-has-image {
+  width: 100%; height: 100%;
+  position: relative;
+  pointer-events: none;
+}
+
+.drop-has-image canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* "Change image" chip — overlaid top-right */
+.change-image-chip {
+  position: absolute;
+  top: 0.6rem; right: 0.6rem;
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  background: rgba(17,19,24,0.75);
+  backdrop-filter: blur(4px);
+  color: var(--md-sys-color-on-primary-container);
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-shape-corner-full);
+  font-size: 0.72rem;
+  font-weight: 500;
+  pointer-events: none;
 }
 
 /* ── Card ── */
@@ -85,51 +176,32 @@ h1 {
   margin-bottom: 1rem;
 }
 
-/* ── Drop zone ── */
-.dropzone {
-  border: 1.5px dashed var(--md-sys-color-outline);
-  border-radius: var(--md-shape-corner-medium);
-  padding: 2.5rem 1.5rem;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
-  position: relative;
-}
-
-.dropzone:hover, .dropzone.dragover {
-  border-color: var(--md-sys-color-primary);
-  background: rgba(170,199,255,0.05);
-}
-
-.dropzone input[type="file"] {
-  position: absolute; inset: 0; opacity: 0;
-  cursor: pointer; width: 100%; height: 100%;
-}
-
-.drop-icon {
-  width: 36px; height: 36px;
-  margin: 0 auto 0.875rem;
-  color: var(--md-sys-color-on-surface-variant);
-}
-
-.drop-primary  { font-size: 0.9rem; font-weight: 500; color: var(--md-sys-color-on-surface); }
-.drop-secondary { font-size: 0.78rem; color: var(--md-sys-color-on-surface-variant); margin-top: 0.25rem; }
-
-.filename-chip {
-  display: none;
+/* ── Accordion ── */
+.card-header {
+  display: flex;
   align-items: center;
-  gap: 0.4rem;
-  margin-top: 0.75rem;
-  padding: 0.3rem 0.75rem;
-  background: var(--md-sys-color-primary-container);
-  color: var(--md-sys-color-on-primary-container);
-  border-radius: var(--md-shape-corner-full);
-  font-size: 0.8rem;
-  font-weight: 500;
-  width: fit-content;
-  margin-left: auto;
-  margin-right: auto;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 0;
 }
+.card-header .card-title { margin-bottom: 0; }
+.card-header .chevron {
+  width: 18px; height: 18px;
+  color: var(--md-sys-color-on-surface-variant);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.card.collapsed .card-header .chevron { transform: rotate(-90deg); }
+
+.card-body {
+  overflow: hidden;
+  transition: max-height 0.25s ease, opacity 0.2s ease, margin-top 0.2s ease;
+  max-height: 800px;
+  opacity: 1;
+  margin-top: 1rem;
+}
+.card.collapsed .card-body { max-height: 0; opacity: 0; margin-top: 0; }
 
 /* ── Settings grid ── */
 .settings-grid {
@@ -143,10 +215,8 @@ h1 {
 .md-field { display: flex; flex-direction: column; gap: 0.375rem; }
 
 .md-field-label {
-  font-size: 0.72rem;
-  font-weight: 500;
-  color: var(--md-sys-color-on-surface-variant);
-  letter-spacing: 0.03em;
+  font-size: 0.72rem; font-weight: 500;
+  color: var(--md-sys-color-on-surface-variant); letter-spacing: 0.03em;
 }
 
 .md-field select,
@@ -162,13 +232,11 @@ h1 {
   transition: border-color 0.2s, box-shadow 0.2s;
   width: 100%;
 }
-
 .md-field select:focus,
 .md-field input[type="number"]:focus {
   border-color: var(--md-sys-color-primary);
   box-shadow: 0 0 0 2px rgba(170,199,255,0.15);
 }
-
 .md-field select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23c4c6d0'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
@@ -201,55 +269,40 @@ h1 {
   border-left: 3px solid var(--md-sys-color-primary);
 }
 .bg-color-row.visible { display: flex; }
-
-.bg-color-row label {
-  font-size: 0.78rem;
-  color: var(--md-sys-color-on-surface-variant);
-  flex: 1;
-}
-
+.bg-color-row label { font-size: 0.78rem; color: var(--md-sys-color-on-surface-variant); flex: 1; }
 .bg-color-row input[type="color"] {
   width: 40px; height: 32px;
   border: 1px solid var(--md-sys-color-outline);
   border-radius: var(--md-shape-corner-small);
-  background: none;
-  cursor: pointer;
-  padding: 2px;
+  background: none; cursor: pointer; padding: 2px;
 }
 
-/* ── Auto / snap buttons ── */
+/* ── Buttons ── */
 .bg-auto-btn {
-  font-size: 0.72rem;
-  font-weight: 500;
+  font-size: 0.72rem; font-weight: 500;
   color: var(--md-sys-color-primary);
   background: none;
   border: 1px solid var(--md-sys-color-primary);
   border-radius: var(--md-shape-corner-full);
   padding: 0.3rem 0.6rem;
-  cursor: pointer;
-  white-space: nowrap;
+  cursor: pointer; white-space: nowrap;
   transition: background 0.15s;
 }
 .bg-auto-btn:hover { background: rgba(170,199,255,0.1); }
 
-/* ── Segmented button (MD3) ── */
+/* ── Segmented button ── */
 .seg-label {
-  font-size: 0.72rem;
-  font-weight: 500;
+  font-size: 0.72rem; font-weight: 500;
   color: var(--md-sys-color-on-surface-variant);
-  margin-bottom: 0.375rem;
-  letter-spacing: 0.03em;
+  margin-bottom: 0.375rem; letter-spacing: 0.03em;
 }
-
 .seg-btn {
   display: flex;
   border: 1px solid var(--md-sys-color-outline);
   border-radius: var(--md-shape-corner-full);
   overflow: hidden;
 }
-
 .seg-btn input[type="radio"] { display: none; }
-
 .seg-btn label {
   flex: 1;
   display: flex; align-items: center; justify-content: center; gap: 0.35rem;
@@ -283,24 +336,7 @@ h1 {
 .md-checkbox span { font-size: 0.875rem; color: var(--md-sys-color-on-surface); line-height: 1.3; }
 .md-checkbox .hint { font-size: 0.72rem; color: var(--md-sys-color-on-surface-variant); }
 
-/* ── Preview ── */
-.preview-area { display: none; margin-bottom: 0.75rem; }
-.preview-area.visible { display: block; }
-
-.preview-canvas-wrap {
-  background: #1a1a1a;
-  padding: 1.25rem;
-  display: flex; justify-content: center;
-  border-radius: var(--md-shape-corner-medium);
-}
-
-#previewCanvas {
-  max-width: 100%; max-height: 300px;
-  border-radius: 2px;
-  box-shadow: 0 4px 32px rgba(0,0,0,0.6);
-}
-
-/* ── Generate button (MD3 Extended FAB) ── */
+/* ── Generate button ── */
 .btn-generate {
   width: 100%;
   padding: 1rem 1.5rem;
@@ -340,66 +376,25 @@ h1 {
 
 /* ── Specs chips ── */
 .specs {
-  display: none; flex-wrap: wrap; gap: 0.5rem;
-  padding: 1rem 1.25rem;
-  background: var(--md-sys-color-surface-container);
-  border-radius: var(--md-shape-corner-large);
+  display: none; flex-wrap: wrap; gap: 0.4rem;
+  margin-top: 0.25rem;
 }
 .specs.visible { display: flex; }
-
 .spec-chip {
   display: flex; flex-direction: column; gap: 0.1rem;
-  padding: 0.4rem 0.75rem;
+  padding: 0.35rem 0.65rem;
   background: var(--md-sys-color-surface-container-high);
   border-radius: var(--md-shape-corner-full);
 }
 .spec-key {
   font-family: 'Roboto Mono', monospace;
-  font-size: 0.58rem; letter-spacing: 0.1em;
+  font-size: 0.55rem; letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--md-sys-color-on-surface-variant);
 }
-.spec-val { font-size: 0.82rem; font-weight: 500; color: var(--md-sys-color-on-surface); }
+.spec-val { font-size: 0.78rem; font-weight: 500; color: var(--md-sys-color-on-surface); }
 
-/* ── Accordion card ── */
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  user-select: none;
-  margin-bottom: 0;
-}
-
-.card-header .card-title {
-  margin-bottom: 0;
-}
-
-.card-header .chevron {
-  width: 18px; height: 18px;
-  color: var(--md-sys-color-on-surface-variant);
-  transition: transform 0.2s ease;
-  flex-shrink: 0;
-}
-
-.card.collapsed .card-header .chevron {
-  transform: rotate(-90deg);
-}
-
-.card-body {
-  overflow: hidden;
-  transition: max-height 0.25s ease, opacity 0.2s ease, margin-top 0.2s ease;
-  max-height: 600px;
-  opacity: 1;
-  margin-top: 1rem;
-}
-
-.card.collapsed .card-body {
-  max-height: 0;
-  opacity: 0;
-  margin-top: 0;
-}
-
+/* ── Spinner ── */
 .spinner {
   width: 18px; height: 18px;
   border: 2px solid rgba(10,48,95,0.4);
