@@ -1,3 +1,8 @@
+// ── Accordion ──
+function toggleCard(id) {
+  document.getElementById(id).classList.toggle('collapsed');
+}
+
 // ── Page size lookup table ──
 const PAGE_SIZES = {
   A3:     [297, 420],
@@ -122,7 +127,7 @@ document.getElementById('bgColor').addEventListener('input', () => {
 // ── Load file ──
 function loadFile(file) {
   if (!file.type.startsWith('image/')) { setStatus('Please upload an image file.', 'err'); return; }
-  originalFilename = file.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_\-\s]/g, '_');
+  originalFilename = file.name.replace(/\.[^/.]+$/, '');
   filenameLabel.textContent = file.name;
   filenameChip.style.display = 'inline-flex';
   const reader = new FileReader();

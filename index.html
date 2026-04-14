@@ -4,11 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Print PDF Generator</title>
-  <script
-  	src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
-  	integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk"
-  	crossorigin="anonymous">
-  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,300;8..144,400;8..144,500;8..144,700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -43,8 +39,14 @@
   </div>
 
   <!-- Page -->
-  <div class="card">
-    <div class="card-title">Page</div>
+  <div class="card collapsed" id="cardPage">
+    <div class="card-header" onclick="toggleCard('cardPage')">
+      <div class="card-title">Page</div>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
+    </div>
+    <div class="card-body">
     <div class="settings-grid">
       <div class="md-field">
         <div class="md-field-label">Format</div>
@@ -84,11 +86,18 @@
         </div>
       </div>
     </div>
+    </div><!-- end card-body -->
   </div>
 
   <!-- Bleed & Image -->
-  <div class="card">
-    <div class="card-title">Bleed &amp; Image</div>
+  <div class="card collapsed" id="cardBleed">
+    <div class="card-header" onclick="toggleCard('cardBleed')">
+      <div class="card-title">Bleed &amp; Image</div>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
+    </div>
+    <div class="card-body">
     <div class="settings-grid">
       <div class="md-field">
         <div class="md-field-label">Bleed (mm)</div>
@@ -119,6 +128,7 @@
         </div>
       </div>
     </div>
+    </div><!-- end card-body -->
   </div>
 
   <!-- Print guides -->
