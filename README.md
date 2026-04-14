@@ -2,7 +2,7 @@
 
 A browser-based tool for converting images to print-ready PDFs with bleed and crop marks. No installation required — runs entirely in the browser.
 
-**[Open the tool →](https://devlix.github.io/print-ready-pdf-generator/)**
+**[Open the tool →](https://YOUR_USERNAME.github.io/YOUR_REPO_NAME/)**
 
 ---
 
@@ -17,7 +17,7 @@ A browser-based tool for converting images to print-ready PDFs with bleed and cr
 - **Crop marks** — positioned correctly in the bleed zone with white halo for visibility on dark images
 - **Trim line guide** — dashed overlay showing where the cut will happen (guide only, not required for print)
 - **Lock aspect ratio** for custom formats, with snap-to-image ratio button
-- **Live preview** — updates instantly as settings change
+- **Live preview** — updates instantly as settings change, shown directly in the drop zone
 - **300 / 350 / 400 dpi** output
 - Output filename matches the original image filename
 
@@ -25,13 +25,21 @@ A browser-based tool for converting images to print-ready PDFs with bleed and cr
 
 ## How to Use
 
-1. Drop an image onto the upload area (JPG, PNG, TIFF, WebP)
-2. Set your page format and orientation
-3. Set bleed size (standard is 3mm)
-4. Choose a bleed method
-5. Click **Generate Print PDF**
+1. Drop an image onto the preview area — or click to browse (JPG, PNG, TIFF, WebP)
+2. The preview updates instantly showing exactly what the PDF will look like
+3. Adjust page format, orientation, bleed and other settings in the right panel
+4. Click **Generate Print PDF**
 
-The PDF will be saved to your default Downloads folder.
+The PDF will be saved to your default Downloads folder. To load a new image, drop it directly onto the preview.
+
+---
+
+## Interface
+
+The tool uses a two-column layout:
+
+- **Left** — drop zone and live preview in one unified area, with specs shown below. Stays fixed while you adjust settings.
+- **Right** — all settings (collapsable sections for Page and Bleed & Image) and the Generate button.
 
 ---
 
