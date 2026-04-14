@@ -4,7 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Print PDF Generator</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script 
+    src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+    integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb"
+    crossorigin="anonymous"></script>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,300;8..144,400;8..144,500;8..144,700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -20,7 +23,7 @@
 
     <!-- Drop zone / preview — same element, two states -->
     <div class="drop-preview-zone" id="dropzone">
-      <input type="file" id="fileInput" accept="image/*">
+      <input type="file" id="fileInput" accept="image/*,.svg">
 
       <!-- State A: empty -->
       <div class="drop-empty" id="dropEmpty">
@@ -31,7 +34,7 @@
         </svg>
         <div class="drop-primary">Drop image here</div>
         <div class="drop-secondary">or click to browse</div>
-        <div class="drop-secondary" style="margin-top:0.25rem;font-size:0.72rem">JPG · PNG · TIFF · WebP</div>
+        <div class="drop-secondary" style="margin-top:0.25rem;font-size:0.72rem">JPG · PNG · TIFF · WebP · SVG</div>
       </div>
 
       <!-- State B: preview -->
@@ -127,9 +130,11 @@
           <div class="md-field">
             <div class="md-field-label">Resolution (DPI)</div>
             <select id="dpi">
-              <option value="300" selected>300 dpi</option>
+              <option value="300" selected>300 dpi — foto</option>
               <option value="350">350 dpi</option>
               <option value="400">400 dpi</option>
+              <option value="600">600 dpi — tekst / SVG</option>
+              <option value="1200">1200 dpi — fineste linjer</option>
             </select>
           </div>
           <div class="md-field full-width">

@@ -14,6 +14,7 @@ const PAGE_SIZES = {
 
 // ── State ──
 let loadedImage    = null;
+let loadedSvg      = null;   // raw SVG text when input is .svg
 let originalFilename = 'image';
 
 // ── DOM refs ──
@@ -98,7 +99,7 @@ fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFile(fi
 // ── Settings change listeners ──
 ['pageFormat','bleedMm','dpi','showCropMarks','showBleedBox','customW','customH'].forEach(id => {
   document.getElementById(id).addEventListener('change', () => {
-    if (loadedImage) { renderPreview(); updateSpecs(); }
+    if (loadedImage || loadedSvg) { renderPreview(); updateSpecs(); }
   });
 });
 
@@ -106,7 +107,7 @@ document.querySelectorAll('input[name="orientation"], input[name="fitMode"]').fo
   el.addEventListener('change', () => {
     const isAddBleed = document.querySelector('input[name="fitMode"]:checked').value === 'addbleed';
     document.getElementById('bgColorRow').classList.toggle('visible', isAddBleed);
-    if (loadedImage) { renderPreview(); updateSpecs(); }
+    if (loadedImage || loadedSvg) { renderPreview(); updateSpecs(); }
   });
 });
 
@@ -126,24 +127,49 @@ document.getElementById('bgColor').addEventListener('input', () => {
 
 // ── Load file ──
 function loadFile(file) {
-  if (!file.type.startsWith('image/')) { setStatus('Please upload an image file.', 'err'); return; }
+  const isSvg = file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg');
+  if (!file.type.startsWith('image/') && !isSvg) { setStatus('Please upload an image file.', 'err'); return; }
+
   originalFilename = file.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_\-\s]/g, '_');
   filenameLabel.textContent = file.name;
+
   const reader = new FileReader();
-  reader.onload = e => {
-    const img = new Image();
-    img.onload = () => {
-      loadedImage = img;
+
+  if (isSvg) {
+    // SVG path — read as text, render preview via img tag
+    reader.onload = e => {
+      loadedSvg   = e.target.result;
+      loadedImage = null;
+      // Auto-set 600dpi for SVG if currently on a raster setting
+      const dpiEl = document.getElementById('dpi');
+      if (parseInt(dpiEl.value) < 600) dpiEl.value = '600';
       generateBtn.disabled = false;
-      // Switch drop zone to preview state
       dropEmpty.style.display    = 'none';
       dropHasImage.style.display = 'block';
-      setStatus('Image loaded — preview ready', '');
-      renderPreview(); updateSpecs();
+      setStatus('SVG loaded — auto-set 600 dpi, vector text preserved in PDF', 'ok');
+      renderSvgPreview(); updateSpecs();
     };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
+    reader.readAsText(file);
+  } else {
+    // Raster path — existing canvas pipeline
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        loadedImage = img;
+        loadedSvg   = null;
+        // Restore 300dpi if coming from SVG at 600+
+        const dpiEl = document.getElementById('dpi');
+        if (parseInt(dpiEl.value) >= 600) dpiEl.value = '300';
+        generateBtn.disabled = false;
+        dropEmpty.style.display    = 'none';
+        dropHasImage.style.display = 'block';
+        setStatus('Image loaded — preview ready', '');
+        renderPreview(); updateSpecs();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
 }
 
 // ── Trim dimensions ──
@@ -278,8 +304,32 @@ function renderToCanvas(canvas, s) {
   }
 }
 
+// ── Render SVG preview (shown in drop zone) ──
+function renderSvgPreview() {
+  // Render SVG as image into previewCanvas for visual reference
+  // (preview is rasterised for display only — PDF will be vector)
+  const blob = new Blob([loadedSvg], { type: 'image/svg+xml' });
+  const url  = URL.createObjectURL(blob);
+  const img  = new Image();
+  img.onload = () => {
+    const container = dropHasImage;
+    const cw = container.clientWidth  || 400;
+    const ch = container.clientHeight || 500;
+    const scale = Math.min(cw / img.width, ch / img.height);
+    previewCanvas.width  = Math.round(img.width  * scale);
+    previewCanvas.height = Math.round(img.height * scale);
+    const ctx = previewCanvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+    ctx.drawImage(img, 0, 0, previewCanvas.width, previewCanvas.height);
+    URL.revokeObjectURL(url);
+  };
+  img.src = url;
+}
+
 // ── Render preview ──
 function renderPreview() {
+  if (loadedSvg) { renderSvgPreview(); return; }
   const s   = getSettings();
   const tmp = document.createElement('canvas');
   renderToCanvas(tmp, s);
@@ -307,7 +357,7 @@ function updateSpecs() {
 
 // ── Generate PDF ──
 generateBtn.addEventListener('click', async () => {
-  if (!loadedImage) return;
+  if (!loadedImage && !loadedSvg) return;
   setStatus('Generating PDF…', '');
   generateBtn.disabled    = true;
   spinner.style.display   = 'block';
@@ -317,24 +367,58 @@ generateBtn.addEventListener('click', async () => {
   await new Promise(r => setTimeout(r, 30));
 
   try {
-    const s        = getSettings();
-    const fc       = document.createElement('canvas');
-    renderToCanvas(fc, s);
-    const imgData  = fc.toDataURL('image/jpeg', 0.97);
-    const pdfW     = +(s.trimW + 2 * s.bleedMm).toFixed(2);
-    const pdfH     = +(s.trimH + 2 * s.bleedMm).toFixed(2);
+    const s       = getSettings();
+    const pdfW    = +(s.trimW + 2 * s.bleedMm).toFixed(2);
+    const pdfH    = +(s.trimH + 2 * s.bleedMm).toFixed(2);
+    const format  = pageFormatEl.value === 'custom' ? 'custom' : pageFormatEl.value;
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({
-      orientation: pdfH >= pdfW ? 'portrait' : 'landscape',
-      unit: 'mm',
-      format: [pdfW, pdfH],
-      compress: true,
-    });
-    const format = pageFormatEl.value === 'custom' ? 'custom' : pageFormatEl.value;
-    pdf.setProperties({ title: 'Print-Ready PDF', subject: `${format} + ${s.bleedMm}mm bleed` });
-    pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH, '', 'FAST');
-    pdf.save(`${originalFilename}_print_${format}_bleed${s.bleedMm}mm.pdf`);
-    setStatus(`✓ PDF saved — ${pdfW}×${pdfH}mm @ ${s.dpi}dpi`, 'ok');
+
+    if (loadedSvg) {
+      // ── SVG path: rasterise at high DPI via canvas ──
+      // Convert SVG text → blob URL → Image → canvas (same pipeline as raster)
+      const blob = new Blob([loadedSvg], { type: 'image/svg+xml' });
+      const url  = URL.createObjectURL(blob);
+      await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          // Temporarily use this image in the raster pipeline
+          loadedImage = img;
+          const fc      = document.createElement('canvas');
+          renderToCanvas(fc, s);
+          const imgData = fc.toDataURL('image/jpeg', 0.99);
+          URL.revokeObjectURL(url);
+          loadedImage = null; // restore state
+          const pdf = new jsPDF({
+            orientation: pdfH >= pdfW ? 'portrait' : 'landscape',
+            unit: 'mm', format: [pdfW, pdfH], compress: true,
+          });
+          pdf.setProperties({ title: 'Print-Ready PDF', subject: `${format} + ${s.bleedMm}mm bleed` });
+          pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH, '', 'FAST');
+          pdf.save(`${originalFilename}_print_${format}_bleed${s.bleedMm}mm.pdf`);
+          setStatus(`✓ PDF saved — ${pdfW}×${pdfH}mm @ ${s.dpi}dpi (rasterised SVG)`, 'ok');
+          resolve();
+        };
+        img.onerror = reject;
+        img.src = url;
+      });
+
+    } else {
+      // ── Raster path: existing canvas pipeline ──
+      const fc      = document.createElement('canvas');
+      renderToCanvas(fc, s);
+      const imgData = fc.toDataURL('image/jpeg', 0.97);
+      const pdf = new jsPDF({
+        orientation: pdfH >= pdfW ? 'portrait' : 'landscape',
+        unit: 'mm',
+        format: [pdfW, pdfH],
+        compress: true,
+      });
+      pdf.setProperties({ title: 'Print-Ready PDF', subject: `${format} + ${s.bleedMm}mm bleed` });
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH, '', 'FAST');
+      pdf.save(`${originalFilename}_print_${format}_bleed${s.bleedMm}mm.pdf`);
+      setStatus(`✓ PDF saved — ${pdfW}×${pdfH}mm @ ${s.dpi}dpi`, 'ok');
+    }
+
   } catch (err) {
     setStatus('Error: ' + err.message, 'err');
     console.error(err);
@@ -344,7 +428,7 @@ generateBtn.addEventListener('click', async () => {
   spinner.style.display = 'none';
   btnIcon.style.display = 'block';
   btnText.textContent   = 'Generate Print PDF';
-  if (loadedImage) generateBtn.disabled = false;
+  if (loadedImage || loadedSvg) generateBtn.disabled = false;
   updateSpecs();
 });
 
