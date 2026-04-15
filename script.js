@@ -257,35 +257,40 @@ function renderToCanvas(canvas, s) {
     }
   }
   ctx.drawImage(img, xOff, yOff, scaledW, scaledH);
+  // Marks are drawn separately via drawMarks() so they stay sharp at any preview scale
+}
 
-  // Trim line guide — white halo + red dashes
+// ── Draw crop marks and trim line onto any canvas at given scale ──
+function drawMarks(canvas, s, scale) {
+  const ctx  = canvas.getContext('2d');
+  const b    = Math.round(s.bleedPx * scale);
+  const tw   = Math.round(s.trimWpx * scale);
+  const th   = Math.round(s.trimHpx * scale);
+  const MM   = scale * s.MM;
+  const lw   = Math.max(1, Math.round(0.25 * MM));
+
   if (s.showBleedBox) {
     ctx.save();
-    const lw   = Math.max(1, Math.round(0.25 * s.MM));
-    const dash = [Math.round(3 * s.MM), Math.round(2 * s.MM)];
+    const dash = [Math.round(3 * MM), Math.round(2 * MM)];
     ctx.strokeStyle = 'rgba(255,255,255,0.85)';
     ctx.lineWidth   = lw * 3;
     ctx.setLineDash(dash);
-    ctx.strokeRect(s.bleedPx, s.bleedPx, s.trimWpx, s.trimHpx);
+    ctx.strokeRect(b, b, tw, th);
     ctx.strokeStyle = 'rgba(200,68,10,0.9)';
     ctx.lineWidth   = lw;
-    ctx.strokeRect(s.bleedPx, s.bleedPx, s.trimWpx, s.trimHpx);
+    ctx.strokeRect(b, b, tw, th);
     ctx.restore();
   }
 
-  // Crop marks — white halo + black mark, live in bleed zone
   if (s.showCropMarks) {
     ctx.save();
-    const lw     = Math.max(1, Math.round(0.25 * s.MM));
-    const { bleedPx: b, trimWpx: tw, trimHpx: th, MM } = s;
-    const gapPx  = Math.round(0.5 * MM);
+    const gapPx  = Math.max(1, Math.round(0.5 * MM));
     const corners = [
       { x: b,      y: b,      dx: -1, dy: -1 },
       { x: b + tw, y: b,      dx:  1, dy: -1 },
       { x: b,      y: b + th, dx: -1, dy:  1 },
       { x: b + tw, y: b + th, dx:  1, dy:  1 },
     ];
-
     const drawMark = (x1, y1, x2, y2) => {
       ctx.strokeStyle = 'rgba(255,255,255,0.85)';
       ctx.lineWidth   = lw * 3;
@@ -295,7 +300,6 @@ function renderToCanvas(canvas, s) {
       ctx.lineWidth   = lw;
       ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
     };
-
     corners.forEach(({ x, y, dx, dy }) => {
       drawMark(x + dx * gapPx, y, x + dx * b, y);
       drawMark(x, y + dy * gapPx, x, y + dy * b);
@@ -303,44 +307,53 @@ function renderToCanvas(canvas, s) {
     ctx.restore();
   }
 }
-
-// ── Render SVG preview (shown in drop zone) ──
 function renderSvgPreview() {
-  // Render SVG as image into previewCanvas for visual reference
-  // (preview is rasterised for display only — PDF will be vector)
+  const s    = getSettings();
   const blob = new Blob([loadedSvg], { type: 'image/svg+xml' });
   const url  = URL.createObjectURL(blob);
   const img  = new Image();
   img.onload = () => {
-    const container = dropHasImage;
-    const cw = container.clientWidth  || 400;
-    const ch = container.clientHeight || 500;
-    const scale = Math.min(cw / img.width, ch / img.height);
-    previewCanvas.width  = Math.round(img.width  * scale);
-    previewCanvas.height = Math.round(img.height * scale);
+    // Route through renderToCanvas so bleed mode, orientation etc. all apply
+    loadedImage = img;
+    const tmp = document.createElement('canvas');
+    renderToCanvas(tmp, s);
+    loadedImage = null;
+    URL.revokeObjectURL(url);
+
+    dropzone.style.aspectRatio = `${s.totalW} / ${s.totalH}`;
+    const cw    = dropzone.clientWidth  || 400;
+    const ch    = dropzone.clientHeight || 500;
+    const scale = Math.min(cw / s.totalW, ch / s.totalH);
+    previewCanvas.width  = Math.round(s.totalW * scale);
+    previewCanvas.height = Math.round(s.totalH * scale);
     const ctx = previewCanvas.getContext('2d');
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
-    ctx.drawImage(img, 0, 0, previewCanvas.width, previewCanvas.height);
-    URL.revokeObjectURL(url);
+    ctx.drawImage(tmp, 0, 0, previewCanvas.width, previewCanvas.height);
+    drawMarks(previewCanvas, s, scale);
   };
+  img.onerror = e => console.error('renderSvgPreview error:', e);
   img.src = url;
 }
 
 // ── Render preview ──
 function renderPreview() {
   if (loadedSvg) { renderSvgPreview(); return; }
-  const s   = getSettings();
-  const tmp = document.createElement('canvas');
+  const s     = getSettings();
+  const tmp   = document.createElement('canvas');
   renderToCanvas(tmp, s);
-  // Draw into the drop-zone canvas, scaled to fill it
-  const container = dropHasImage;
-  const cw = container.clientWidth  || 400;
-  const ch = container.clientHeight || 500;
+  // Set container aspect ratio to match the actual canvas
+  dropzone.style.aspectRatio = `${s.totalW} / ${s.totalH}`;
+  const cw    = dropzone.clientWidth  || 400;
+  const ch    = dropzone.clientHeight || 500;
   const scale = Math.min(cw / s.totalW, ch / s.totalH);
   previewCanvas.width  = Math.round(s.totalW * scale);
   previewCanvas.height = Math.round(s.totalH * scale);
-  previewCanvas.getContext('2d').drawImage(tmp, 0, 0, previewCanvas.width, previewCanvas.height);
+  const ctx = previewCanvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+  ctx.drawImage(tmp, 0, 0, previewCanvas.width, previewCanvas.height);
+  drawMarks(previewCanvas, s, scale);
 }
 
 // ── Update specs bar ──
@@ -381,13 +394,13 @@ generateBtn.addEventListener('click', async () => {
       await new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
-          // Temporarily use this image in the raster pipeline
           loadedImage = img;
           const fc      = document.createElement('canvas');
           renderToCanvas(fc, s);
+          drawMarks(fc, s, 1);
           const imgData = fc.toDataURL('image/jpeg', 0.99);
           URL.revokeObjectURL(url);
-          loadedImage = null; // restore state
+          loadedImage = null;
           const pdf = new jsPDF({
             orientation: pdfH >= pdfW ? 'portrait' : 'landscape',
             unit: 'mm', format: [pdfW, pdfH], compress: true,
@@ -406,6 +419,7 @@ generateBtn.addEventListener('click', async () => {
       // ── Raster path: existing canvas pipeline ──
       const fc      = document.createElement('canvas');
       renderToCanvas(fc, s);
+      drawMarks(fc, s, 1);
       const imgData = fc.toDataURL('image/jpeg', 0.97);
       const pdf = new jsPDF({
         orientation: pdfH >= pdfW ? 'portrait' : 'landscape',
